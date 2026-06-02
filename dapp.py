@@ -29,25 +29,35 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 # 📺 [대시보드용] 레이아웃 와이드 및 화면 꽉 채우기
 st.set_page_config(layout="wide", page_title="🔴 실시간 주식 대시보드 LIVE", initial_sidebar_state="collapsed")
 
-# 📺 커스텀 CSS (여백 최소화 및 방송용 폰트)
+# 📺 커스텀 CSS (여백 최소화 및 하이모바일 타이틀 디자인)
 st.markdown("""
 <style>
-    .block-container { padding-top: 1rem; padding-bottom: 0rem; max-width: 100%; }
+    .block-container { padding-top: 1.5rem; padding-bottom: 0rem; max-width: 100%; }
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-    h1 { font-size: 2.5rem !important; font-weight: 900 !important; color: #FF4B4B !important; text-align: left; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); margin-bottom: 0px; }
-    h3 { font-size: 1.5rem !important; font-weight: 800 !important; color: #FFD700 !important; margin-top: 5px; margin-bottom: 10px; }
-    [data-testid="stMetricValue"] { font-size: 2.2rem !important; font-weight: 900 !important; line-height: 1.1 !important; }
-    [data-testid="stMetricDelta"] { font-size: 1.2rem !important; font-weight: 700 !important; }
+    
+    /* 타이틀 크기 축소 및 하이모바일 텍스트 정렬 */
+    .main-title { font-size: 1.8rem !important; font-weight: 900 !important; color: #FF4B4B !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); display: inline-block; vertical-align: middle; }
+    .company-name { font-size: 1.2rem !important; color: #B0B0B0 !important; font-weight: 700 !important; margin-left: 15px; display: inline-block; vertical-align: middle; }
+    
+    h3 { font-size: 1.3rem !important; font-weight: 800 !important; color: #FFD700 !important; margin-top: 5px; margin-bottom: 10px; }
+    [data-testid="stMetricValue"] { font-size: 2.0rem !important; font-weight: 900 !important; line-height: 1.1 !important; }
+    [data-testid="stMetricDelta"] { font-size: 1.1rem !important; font-weight: 700 !important; }
     [data-testid="stMetricLabel"] { font-size: 1rem !important; font-weight: 600 !important; color: #888888; }
     .stDataFrame { font-size: 1.1rem !important; }
-    div[data-testid="stDataFrame"] table { font-size: 1rem !important; font-weight: 600 !important; }
+    div[data-testid="stDataFrame"] table { font-size: 1.1rem !important; font-weight: 600 !important; }
     hr { margin-top: 0.5rem; margin-bottom: 0.5rem; border-color: #444444; border-width: 2px; }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🔴 [LIVE] 국내주식 단타 스캐너 24H")
+# 🏢 메인 타이틀 및 회사명 렌더링
+st.markdown("""
+    <div style='margin-bottom: 15px;'>
+        <span class='main-title'>🔴 [LIVE] 국내주식 단타 스캐너 24H</span>
+        <span class='company-name'>| 주식회사 하이모바일</span>
+    </div>
+""", unsafe_allow_html=True)
 
 KST = timezone(timedelta(hours=9))
 
@@ -128,7 +138,7 @@ def create_pro_chart(df, title, color_hex):
     delta = current_val - prev_val
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df.index, y=df['Close'], mode='lines', line=dict(color=color_hex, width=3), fill='tozeroy', fillcolor=f"rgba({int(color_hex[1:3],16)}, {int(color_hex[3:5],16)}, {int(color_hex[5:7],16)}, 0.2)", name=title))
-    fig.update_layout(title=dict(text=f"<b>{title}</b> <span style='font-size:16px; color:{'#ff4b4b' if delta >=0 else '#0068c9'}'>{current_val:,.2f} ({(delta / prev_val) * 100:+.2f}%)</span>", x=0.05, y=0.85), height=150, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(showgrid=False, visible=False), yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.1)', side='right'), hovermode="x unified")
+    fig.update_layout(title=dict(text=f"<b>{title}</b> <span style='font-size:16px; color:{'#ff4b4b' if delta >=0 else '#0068c9'}'>{current_val:,.2f} ({(delta / prev_val) * 100:+.2f}%)</span>", x=0.05, y=0.85), height=140, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(showgrid=False, visible=False), yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.1)', side='right'), hovermode="x unified")
     return fig
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -200,120 +210,66 @@ elif time_reg_start <= now_time < time_after_start: default_auto, default_pre, d
 elif time_after_start <= now_time < time_after_end: default_auto, default_pre, default_after = True, False, True
 
 # -----------------------------------------------------------------------------
-# [좌우 분할 레이아웃] 좌: 스캐너 리스트 (60%) / 우: 1분봉 차트 (40%)
+# 📊 와이드 스캐너 테이블 (화면 꽉 채우기)
 # -----------------------------------------------------------------------------
-left_col, right_col = st.columns([6, 4])
+# 스위치 컨트롤 패널
+sc1, sc2, sc3, _ = st.columns([1.5, 1.5, 1.5, 5.5])
+with sc1: auto_refresh = st.toggle("⏱️ 1분 갱신", value=default_auto)
+with sc2: pre_market_mode = st.toggle("☀️ 동시호가 모드", value=default_pre)
+with sc3: after_market_mode = st.toggle("🌙 시간외 모드", value=default_after)
 
-with left_col:
-    # 스위치 컨트롤 패널
-    sc1, sc2, sc3 = st.columns(3)
-    with sc1: auto_refresh = st.toggle("⏱️ 1분 갱신", value=default_auto)
-    with sc2: pre_market_mode = st.toggle("☀️ 동시호가", value=default_pre)
-    with sc3: after_market_mode = st.toggle("🌙 시간외", value=default_after)
+if auto_refresh:
+    try:
+        from streamlit_autorefresh import st_autorefresh
+        st_autorefresh(interval=60000, limit=10000, key="auto_scanner_refresh")
+    except ImportError: pass
 
-    if auto_refresh:
-        try:
-            from streamlit_autorefresh import st_autorefresh
-            st_autorefresh(interval=60000, limit=10000, key="auto_scanner_refresh")
-        except ImportError: pass
+if pre_market_mode: st.markdown("<h3>🎯 장전 예상 갭상승 타겟 Top 30</h3>", unsafe_allow_html=True)
+elif after_market_mode: st.markdown("<h3>🌙 시간외 단일가 수급 타겟 Top 30</h3>", unsafe_allow_html=True)
+else: st.markdown("<h3>📈 실시간 돌파/눌림목 타겟 Top 30 (AI 예측 랭킹)</h3>", unsafe_allow_html=True)
 
-    if pre_market_mode: st.markdown("<h3>🎯 장전 예상 갭상승 타겟 Top 30</h3>", unsafe_allow_html=True)
-    elif after_market_mode: st.markdown("<h3>🌙 시간외 단일가 수급 타겟 Top 30</h3>", unsafe_allow_html=True)
-    else: st.markdown("<h3>📈 실시간 돌파/눌림목 타겟 Top 30</h3>", unsafe_allow_html=True)
+df_universe = get_kis_top_trading_value_stocks()
 
-    df_universe = get_kis_top_trading_value_stocks()
+if not df_universe.empty:
+    filtered_df = df_universe[df_universe['등락률'] > -2.0].copy()
+    X_live = filtered_df[['등락률', '거래대금', '현재가']].fillna(0)
+    filtered_df['10분_상승예측(%)'] = ((filtered_df['등락률'] * 0.5) + np.log1p(filtered_df['거래대금'])).round(2)
+    filtered_df['테마'] = filtered_df['종목명'].apply(get_theme_icon)
+    
+    def detect_signal(row):
+        if row['등락률'] >= 7.0 and row['거래대금'] > 50000: return "🔥 돌파매매"
+        elif 1.0 <= row['등락률'] < 5.0 and row['거래대금'] > 20000: return "💧 눌림목"
+        return "▪️ 관망"
+    filtered_df['매매상태'] = filtered_df.apply(detect_signal, axis=1)
+    
+    top_30 = filtered_df.sort_values(by='10분_상승예측(%)', ascending=False).head(30)
+    
+    if pre_market_mode:
+        extra_df = fetch_pre_market_data(top_30)
+        top_30 = pd.merge(top_30, extra_df, on='종목코드', how='left').sort_values(by='_sort_ratio_num', ascending=False)
+    elif after_market_mode:
+        extra_df = fetch_after_market_data(top_30)
+        top_30 = pd.merge(top_30, extra_df, on='종목코드', how='left').sort_values(by='_sort_ratio_num', ascending=False)
 
-    if not df_universe.empty:
-        filtered_df = df_universe[df_universe['등락률'] > -2.0].copy()
-        X_live = filtered_df[['등락률', '거래대금', '현재가']].fillna(0)
-        filtered_df['10분_상승예측(%)'] = ((filtered_df['등락률'] * 0.5) + np.log1p(filtered_df['거래대금'])).round(2)
-        filtered_df['테마'] = filtered_df['종목명'].apply(get_theme_icon)
+    output_dict = {
+        '섹터/테마': top_30['테마'], 
+        '매매상태': top_30['매매상태'], 
+        '종목명': top_30['종목명'],
+        '현재가 (원)': top_30['현재가'].apply(lambda x: f"{int(x):,} 원"),
+        '상승률 (%)': top_30['등락률'].apply(lambda x: f"{x:+.2f} %"),
+        '누적 거래대금 (백만원)': top_30['거래대금'].apply(lambda x: f"{int(x):,}")
+    }
+    
+    if pre_market_mode:
+        output_dict['☀️ 예상 갭상승률'] = top_30['☀️ 예상 갭상승률']
+        output_dict['☀️ 예상 체결가'] = top_30['☀️ 예상 체결가']
+    elif after_market_mode:
+        output_dict['🌙 시간외 등락률'] = top_30['시간외 등락률']
+        output_dict['🌙 시간외 현재가'] = top_30['시간외 현재가']
         
-        def detect_signal(row):
-            if row['등락률'] >= 7.0 and row['거래대금'] > 50000: return "🔥 돌파매매"
-            elif 1.0 <= row['등락률'] < 5.0 and row['거래대금'] > 20000: return "💧 눌림목"
-            return "▪️ 관망"
-        filtered_df['매매상태'] = filtered_df.apply(detect_signal, axis=1)
-        
-        top_30 = filtered_df.sort_values(by='10분_상승예측(%)', ascending=False).head(30)
-        
-        if pre_market_mode:
-            extra_df = fetch_pre_market_data(top_30)
-            top_30 = pd.merge(top_30, extra_df, on='종목코드', how='left').sort_values(by='_sort_ratio_num', ascending=False)
-        elif after_market_mode:
-            extra_df = fetch_after_market_data(top_30)
-            top_30 = pd.merge(top_30, extra_df, on='종목코드', how='left').sort_values(by='_sort_ratio_num', ascending=False)
-
-        output_dict = {
-            '섹터': top_30['테마'], '상태': top_30['매매상태'], '종목명': top_30['종목명'],
-            '현재가': top_30['현재가'].apply(lambda x: f"{int(x):,} 원"),
-            '상승률': top_30['등락률'].apply(lambda x: f"{x:+.2f} %"),
-            '거래대금(백)': top_30['거래대금'].apply(lambda x: f"{int(x):,}")
-        }
-        
-        if pre_market_mode:
-            output_dict['☀️ 예상상승'] = top_30['☀️ 예상 갭상승률']
-            output_dict['☀️ 예상가'] = top_30['☀️ 예상 체결가']
-        elif after_market_mode:
-            output_dict['🌙 시간외등락'] = top_30['시간외 등락률']
-            output_dict['🌙 시간외가'] = top_30['시간외 현재가']
-            
-        output_df = pd.DataFrame(output_dict).reset_index(drop=True)
-        # 테이블의 높이를 길게 주어 스크롤 바 없이 최대한 많이 보이도록 설정
-        selected_rows = st.dataframe(output_df, use_container_width=True, height=650, selection_mode="single-row", on_select="rerun")
-    else:
-        st.error("데이터 로드 중입니다...")
-        output_df = pd.DataFrame()
-
-# -----------------------------------------------------------------------------
-# [우측 분할] 클릭 시 1분봉 차트 및 보안관 경고 즉시 렌더링
-# -----------------------------------------------------------------------------
-with right_col:
-    selected_idx = selected_rows.selection.rows[0] if (hasattr(selected_rows, 'selection') and len(selected_rows.selection.rows) > 0) else 0
-
-    if not output_df.empty and selected_idx < len(output_df):
-        target_code = top_30.iloc[selected_idx]['종목코드']
-        target_name = output_df.iloc[selected_idx]['종목명']
-        
-        st.markdown(f"<h3>🔍 [{target_name}] 실시간 1분봉 분석</h3>", unsafe_allow_html=True)
-        
-        url = f"{URL_BASE}/uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice"
-        headers = get_common_headers("FHKST03010200")
-        params = {"FID_ETC_CLS_CODE": "", "FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": target_code, "FID_INPUT_HOUR_1": datetime.now(KST).strftime("%H%M%S"), "FID_PW_DATA_INCU_YN": "Y"}
-        try:
-            res = requests.get(url, headers=headers, params=params)
-            res_data = res.json()
-            if res_data['rt_cd'] == '0' and 'output2' in res_data:
-                min_data = res_data['output2'][::-1] 
-                df_min = pd.DataFrame({"Open": [float(m['stck_oprc']) for m in min_data], "High": [float(m['stck_hgpr']) for m in min_data], "Low": [float(m['stck_lwpr']) for m in min_data], "Close": [float(m['stck_prpr']) for m in min_data], "Volume": [float(m['cntg_vol']) for m in min_data]}, index=pd.to_datetime([f"{m['stck_bsop_date']} {m['stck_cntg_hour']}" for m in min_data], format="%Y%m%d %H%M%S"))
-                df_min = df_min[df_min['Close'] > 0]
-                
-                if not df_min.empty:
-                    df_min['MA5'], df_min['MA20'] = df_min['Close'].rolling(5).mean(), df_min['Close'].rolling(20).mean()
-                    
-                    # 보안관 상태 진단 창 (차트 바로 위)
-                    c_p, h_10m = df_min['Close'].iloc[-1], df_min['High'].iloc[-10:].max()
-                    if c_p < df_min['MA5'].iloc[-1] and c_p <= h_10m * 0.97: st.error("💣 **[비상경보]** 5분선 붕괴 급락 위험! 진입 금지")
-                    elif c_p >= h_10m * 0.98 and not (df_min['MA5'].iloc[-1] > df_min['MA20'].iloc[-1] and df_min['MA5'].iloc[-2] <= df_min['MA20'].iloc[-2]): st.warning("⚠️ **[추격매수 경고]** 가짜 고점 돌파 조심! 관망")
-                    else: st.success("🟢 **[안전지대]** 리스크 관리 기준선 유지 중")
-
-                    df_min['Diff'] = df_min['Close'].diff().fillna(0)
-                    min_price, max_price = df_min['Low'].min(), df_min['High'].max()
-                    price_margin = (max_price - min_price) * 0.1 if max_price != min_price else min_price * 0.01
-                    
-                    fig_stock = go.Figure()
-                    fig_stock.add_trace(go.Candlestick(x=df_min.index, open=df_min['Open'], high=df_min['High'], low=df_min['Low'], close=df_min['Close'], increasing_line_color='#FF4B4B', decreasing_line_color='#0068C9', name="주가"))
-                    fig_stock.add_trace(go.Scatter(x=df_min.index, y=df_min['MA5'], mode='lines', line=dict(color='#FFD700', width=2), name="5분선", hoverinfo='skip'))
-                    fig_stock.add_trace(go.Scatter(x=df_min.index, y=df_min['MA20'], mode='lines', line=dict(color='#00FA9A', width=2), name="20분선", hoverinfo='skip'))
-                    fig_stock.add_trace(go.Bar(x=df_min.index, y=df_min['Volume'], name="거래량", marker_color=['#FF4B4B' if d >= 0 else '#0068C9' for d in df_min['Diff']], opacity=0.7, yaxis='y2'))
-                    
-                    fig_stock.update_layout(
-                        template="plotly_dark", height=500, margin=dict(l=10, r=40, t=10, b=10),
-                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                        xaxis=dict(showgrid=True, gridcolor='#333333', type='date', tickformat='%H:%M', rangeslider=dict(visible=False)), 
-                        yaxis=dict(side='right', showgrid=True, gridcolor='#333333', tickformat=',', range=[min_price - price_margin, max_price + price_margin], domain=[0.3, 1]), 
-                        yaxis2=dict(side='right', showgrid=False, tickformat=',', domain=[0, 0.2]), 
-                        hovermode='x unified', showlegend=False
-                    )
-                    st.plotly_chart(fig_stock, use_container_width=True)
-        except: pass
+    output_df = pd.DataFrame(output_dict).reset_index(drop=True)
+    
+    # 1분봉 차트가 사라진 공간만큼 테이블이 화면 100%를 꽉 채우도록 설정 (높이 대폭 확장)
+    st.dataframe(output_df, use_container_width=True, height=750, hide_index=True)
+else:
+    st.error("데이터 로드 중입니다...")
