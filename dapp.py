@@ -26,35 +26,42 @@ except KeyError:
 
 URL_BASE = "https://openapi.koreainvestment.com:9443" 
 
-# 📺 [대시보드용] 레이아웃 와이드 및 화면 꽉 채우기
-st.set_page_config(layout="wide", page_title="🔴 실시간 주식 대시보드 LIVE", initial_sidebar_state="collapsed")
+# 📺 [초압축 뷰] 레이아웃 와이드
+st.set_page_config(layout="wide", page_title="🔴 하이모바일 주식 대시보드", initial_sidebar_state="collapsed")
 
-# 📺 커스텀 CSS (여백 최소화 및 하이모바일 타이틀 디자인)
+# 📺 커스텀 CSS (여백 극강 축소 및 컬럼 밀착)
 st.markdown("""
 <style>
-    .block-container { padding-top: 1.5rem; padding-bottom: 0rem; max-width: 100%; }
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    /* 화면 상하좌우 여백 완전 제거 */
+    .block-container { padding-top: 1.0rem !important; padding-bottom: 0rem !important; padding-left: 1rem !important; padding-right: 1rem !important; max-width: 100%; }
+    #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
     
-    /* 타이틀 크기 축소 및 하이모바일 텍스트 정렬 */
-    .main-title { font-size: 1.8rem !important; font-weight: 900 !important; color: #FF4B4B !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); display: inline-block; vertical-align: middle; }
-    .company-name { font-size: 1.2rem !important; color: #B0B0B0 !important; font-weight: 700 !important; margin-left: 15px; display: inline-block; vertical-align: middle; }
+    /* 💡 핵심: 3분할/5분할 컬럼 사이의 간격을 극한으로 밀착 */
+    [data-testid="column"] { padding-left: 0.3rem !important; padding-right: 0.3rem !important; }
     
-    h3 { font-size: 1.3rem !important; font-weight: 800 !important; color: #FFD700 !important; margin-top: 5px; margin-bottom: 10px; }
-    [data-testid="stMetricValue"] { font-size: 2.0rem !important; font-weight: 900 !important; line-height: 1.1 !important; }
-    [data-testid="stMetricDelta"] { font-size: 1.1rem !important; font-weight: 700 !important; }
-    [data-testid="stMetricLabel"] { font-size: 1rem !important; font-weight: 600 !important; color: #888888; }
-    .stDataFrame { font-size: 1.1rem !important; }
-    div[data-testid="stDataFrame"] table { font-size: 1.1rem !important; font-weight: 600 !important; }
-    hr { margin-top: 0.5rem; margin-bottom: 0.5rem; border-color: #444444; border-width: 2px; }
+    /* 타이틀 및 폰트 압축 */
+    .main-title { font-size: 1.5rem !important; font-weight: 900 !important; color: #FF4B4B !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); display: inline-block; vertical-align: middle; }
+    .company-name { font-size: 1.0rem !important; color: #B0B0B0 !important; font-weight: 700 !important; margin-left: 10px; display: inline-block; vertical-align: middle; }
+    
+    h3 { font-size: 1.1rem !important; font-weight: 800 !important; color: #FFD700 !important; margin-top: 0px; margin-bottom: 5px; }
+    
+    /* 메트릭(수치) 높이 및 여백 축소 */
+    [data-testid="stMetricValue"] { font-size: 1.6rem !important; font-weight: 900 !important; line-height: 1.0 !important; }
+    [data-testid="stMetricDelta"] { font-size: 0.9rem !important; font-weight: 700 !important; }
+    [data-testid="stMetricLabel"] { font-size: 0.8rem !important; font-weight: 600 !important; color: #888888; margin-bottom: -5px;}
+    
+    /* 데이터프레임 압축 */
+    .stDataFrame { font-size: 1.0rem !important; }
+    div[data-testid="stDataFrame"] table { font-size: 1.0rem !important; font-weight: 600 !important; padding: 0px !important;}
+    
+    hr { margin-top: 0.3rem; margin-bottom: 0.3rem; border-color: #333333; border-width: 1px; }
 </style>
 """, unsafe_allow_html=True)
 
-# 🏢 메인 타이틀 및 회사명 렌더링
+# 🏢 메인 타이틀
 st.markdown("""
-    <div style='margin-bottom: 15px;'>
-        <span class='main-title'>🔴 [LIVE] 국내주식 단타 스캐너 24H</span>
+    <div style='margin-bottom: 5px;'>
+        <span class='main-title'>🔴 [LIVE] 스캐너 24H</span>
         <span class='company-name'>| 주식회사 하이모바일</span>
     </div>
 """, unsafe_allow_html=True)
@@ -138,7 +145,8 @@ def create_pro_chart(df, title, color_hex):
     delta = current_val - prev_val
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df.index, y=df['Close'], mode='lines', line=dict(color=color_hex, width=3), fill='tozeroy', fillcolor=f"rgba({int(color_hex[1:3],16)}, {int(color_hex[3:5],16)}, {int(color_hex[5:7],16)}, 0.2)", name=title))
-    fig.update_layout(title=dict(text=f"<b>{title}</b> <span style='font-size:16px; color:{'#ff4b4b' if delta >=0 else '#0068c9'}'>{current_val:,.2f} ({(delta / prev_val) * 100:+.2f}%)</span>", x=0.05, y=0.85), height=140, margin=dict(l=10, r=10, t=30, b=10), template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(showgrid=False, visible=False), yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.1)', side='right'), hovermode="x unified")
+    # 높이를 100으로 줄여서 극강의 슬림화
+    fig.update_layout(title=dict(text=f"<b>{title}</b> <span style='font-size:14px; color:{'#ff4b4b' if delta >=0 else '#0068c9'}'>{current_val:,.2f} ({(delta / prev_val) * 100:+.2f}%)</span>", x=0.02, y=0.85), height=100, margin=dict(l=5, r=5, t=25, b=5), template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(showgrid=False, visible=False), yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.1)', side='right'), hovermode="x unified")
     return fig
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -179,28 +187,23 @@ def fetch_pre_market_data(top30_df):
     return df
 
 # -----------------------------------------------------------------------------
-# [상단 1열] 글로벌 지수 & 외인 수급 (얇게 배치)
+# [상단 1열] 글로벌 지수 3분할 콤팩트 렌더링
 # -----------------------------------------------------------------------------
-st.markdown("---")
+st.markdown("<hr style='margin-top: 0; margin-bottom: 5px;'>", unsafe_allow_html=True)
 ks_df, kq_df, usd_df = get_market_indices_v2()
+
+c1, c2, c3 = st.columns(3, gap="small")
+with c1: st.plotly_chart(create_pro_chart(ks_df, "KOSPI", "#FF4B4B"), use_container_width=True)
+with c2: st.plotly_chart(create_pro_chart(kq_df, "KOSDAQ", "#00CC96"), use_container_width=True)
+with c3: st.plotly_chart(create_pro_chart(usd_df, "USD/KRW", "#636EFA"), use_container_width=True)
+
+# -----------------------------------------------------------------------------
+# [상단 2열] 수급 지표 & 스위치 컨트롤 (한 줄에 콤팩트하게 통합)
+# -----------------------------------------------------------------------------
+st.markdown("<hr style='margin-top: 0; margin-bottom: 5px;'>", unsafe_allow_html=True)
 if 'foreign_futures_net' not in st.session_state: st.session_state.foreign_futures_net = get_foreign_investor_trend()
 ff_net = st.session_state.foreign_futures_net
 
-t1, t2, t3, t4, t5 = st.columns([2, 2, 2, 2, 2])
-with t1: st.plotly_chart(create_pro_chart(ks_df, "KOSPI", "#FF4B4B"), use_container_width=True)
-with t2: st.plotly_chart(create_pro_chart(kq_df, "KOSDAQ", "#00CC96"), use_container_width=True)
-with t3: st.plotly_chart(create_pro_chart(usd_df, "USD/KRW", "#636EFA"), use_container_width=True)
-with t4:
-    if ff_net > 0: st.metric("외인 선물 순매수", f"+{ff_net:,} 억", "매수 우위", delta_color="normal")
-    else: st.metric("외인 선물 순매수", f"{ff_net:,} 억", "매도 우위", delta_color="inverse")
-with t5:
-    st.metric("시장 매력도", f"{min(100, max(0, int(50 + (ff_net / 10))))} 점", "수급 탄력도", delta_color="normal" if ff_net > 0 else "inverse")
-
-st.markdown("---")
-
-# -----------------------------------------------------------------------------
-# 🤖 오토 파일럿 시간 판별 로직
-# -----------------------------------------------------------------------------
 now_time = datetime.now(KST).time()
 time_pre_start, time_reg_start, time_after_start, time_after_end = dt_time(8, 30), dt_time(9, 0), dt_time(15, 30), dt_time(18, 0)
 default_auto, default_pre, default_after = False, False, True
@@ -209,14 +212,19 @@ if time_pre_start <= now_time < time_reg_start: default_auto, default_pre, defau
 elif time_reg_start <= now_time < time_after_start: default_auto, default_pre, default_after = True, False, False
 elif time_after_start <= now_time < time_after_end: default_auto, default_pre, default_after = True, False, True
 
-# -----------------------------------------------------------------------------
-# 📊 와이드 스캐너 테이블 (화면 꽉 채우기)
-# -----------------------------------------------------------------------------
-# 스위치 컨트롤 패널
-sc1, sc2, sc3, _ = st.columns([1.5, 1.5, 1.5, 5.5])
-with sc1: auto_refresh = st.toggle("⏱️ 1분 갱신", value=default_auto)
-with sc2: pre_market_mode = st.toggle("☀️ 동시호가 모드", value=default_pre)
-with sc3: after_market_mode = st.toggle("🌙 시간외 모드", value=default_after)
+m1, m2, m3 = st.columns([1.5, 1.5, 7], gap="small")
+
+with m1:
+    if ff_net > 0: st.metric("외인 선물 순매수", f"+{ff_net:,} 억", "매수 우위", delta_color="normal")
+    else: st.metric("외인 선물 순매수", f"{ff_net:,} 억", "매도 우위", delta_color="inverse")
+with m2:
+    st.metric("시장 매력도", f"{min(100, max(0, int(50 + (ff_net / 10))))} 점", "탄력도", delta_color="normal" if ff_net > 0 else "inverse")
+with m3:
+    # 스위치 패널을 바로 옆에 붙여서 공간 절약
+    sc1, sc2, sc3 = st.columns([1.5, 1.5, 7], gap="small")
+    with sc1: auto_refresh = st.toggle("⏱️ 1분 갱신", value=default_auto)
+    with sc2: pre_market_mode = st.toggle("☀️ 동시호가", value=default_pre)
+    with sc3: after_market_mode = st.toggle("🌙 시간외", value=default_after)
 
 if auto_refresh:
     try:
@@ -224,9 +232,13 @@ if auto_refresh:
         st_autorefresh(interval=60000, limit=10000, key="auto_scanner_refresh")
     except ImportError: pass
 
+# -----------------------------------------------------------------------------
+# 📊 와이드 스캐너 테이블 (화면 꽉 채우기)
+# -----------------------------------------------------------------------------
+st.markdown("<hr style='margin-top: 0; margin-bottom: 5px;'>", unsafe_allow_html=True)
 if pre_market_mode: st.markdown("<h3>🎯 장전 예상 갭상승 타겟 Top 30</h3>", unsafe_allow_html=True)
 elif after_market_mode: st.markdown("<h3>🌙 시간외 단일가 수급 타겟 Top 30</h3>", unsafe_allow_html=True)
-else: st.markdown("<h3>📈 실시간 돌파/눌림목 타겟 Top 30 (AI 예측 랭킹)</h3>", unsafe_allow_html=True)
+else: st.markdown("<h3>📈 실시간 돌파/눌림목 타겟 Top 30</h3>", unsafe_allow_html=True)
 
 df_universe = get_kis_top_trading_value_stocks()
 
@@ -269,7 +281,7 @@ if not df_universe.empty:
         
     output_df = pd.DataFrame(output_dict).reset_index(drop=True)
     
-    # 1분봉 차트가 사라진 공간만큼 테이블이 화면 100%를 꽉 채우도록 설정 (높이 대폭 확장)
-    st.dataframe(output_df, use_container_width=True, height=750, hide_index=True)
+    # 높이를 800으로 주어 화면 전체를 덮도록 세팅
+    st.dataframe(output_df, use_container_width=True, height=800, hide_index=True)
 else:
     st.error("데이터 로드 중입니다...")
