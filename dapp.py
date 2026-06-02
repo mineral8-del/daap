@@ -51,11 +51,11 @@ st.markdown("""
     .custom-stock-table thead tr { background-color: #1e293b; color: #ffffff; }
     .custom-stock-table th { padding: 4px 3px; font-size: 0.9rem; font-weight: 700; }
     
-    /* 💡 td 여백을 3px -> 1.5px로 줄여 세로 길이를 대폭 다이어트 */
-    .custom-stock-table td { padding: 1.5px 3px; border-bottom: 1px solid #f1f5f9; line-height: 1.1; }
+    /* 💡 td 여백 살짝 조정 (하단 가이드 공간 확보) */
+    .custom-stock-table td { padding: 2.5px 3px; border-bottom: 1px solid #f1f5f9; line-height: 1.1; }
     .custom-stock-table tbody tr:nth-of-type(even) { background-color: #f8fafc; } 
     
-    /* 종목명 폰트 크기를 아주 살짝 조절하여 10개 완벽 안착 */
+    /* 종목명 폰트 크기 */
     .stock-name-cell { font-size: 1.45rem; font-weight: 900; color: #0f172a; letter-spacing: -1px; } 
     .up-color { color: #ef4444 !important; } 
     .down-color { color: #3b82f6 !important; } 
@@ -69,6 +69,16 @@ st.markdown("""
     /* ⏱️ 게이지 바 슬림화 */
     .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 2px; height: 3px; margin-bottom: 2px; overflow: hidden; }
     #scanProgressBar { height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa, #ef4444); width: 0%; transition: width 0.1s linear; }
+
+    /* 💡 하단 가이드 패널 CSS */
+    .guide-panel {
+        background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; 
+        padding: 6px 12px; margin-top: 4px; font-size: 0.85rem; color: #334155; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between;
+    }
+    .guide-box { width: 49%; }
+    .guide-title { font-size: 0.9rem; font-weight: 800; margin-bottom: 3px; }
+    .guide-list { margin: 0; padding-left: 18px; line-height: 1.35; font-weight: 600; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -284,7 +294,6 @@ if not df_universe.empty:
         extra_df = fetch_after_market_data(top_10)
         if not extra_df.empty: top_10 = pd.merge(top_10, extra_df, on='종목코드', how='left').sort_values(by='_sort_ratio', ascending=False)
 
-    # 🚀 Ticker(시세 띠)용 문자열 생성
     ticker_items = []
     for _, row in top_10.iterrows():
         color = "#ef4444" if row['등락률'] > 0 else "#3b82f6" if row['등락률'] < 0 else "#ffffff"
@@ -319,11 +328,7 @@ st.markdown(f"""
             🔥 [하이모바일 LIVE 실시간 주도주 스캔] &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp; {ticker_html_str}
         </div>
     </div>
-    
-    <div class="progress-container">
-        <div id="scanProgressBar"></div>
-    </div>
-    
+    <div class="progress-container"><div id="scanProgressBar"></div></div>
     <script>
         var startTime = Date.now();
         function updateProgress() {{
@@ -406,3 +411,27 @@ if not top_10.empty:
     st.markdown(html_table, unsafe_allow_html=True)
 else:
     st.error("데이터를 수집 중입니다. 장 시작 전이거나 네트워크 상태를 확인해주세요.")
+
+# -----------------------------------------------------------------------------
+# 💡 [신규] 하단 화면 채우기용 - 시청자 가이드 HUD 패널
+# -----------------------------------------------------------------------------
+st.markdown("""
+<div class="guide-panel">
+    <div class="guide-box">
+        <div class="guide-title" style="color: #FF4B4B;">💡 하이모바일 AI 스캐너 특징</div>
+        <ul class="guide-list">
+            <li><b>실시간 주도주 포착:</b> 당일 <b>대량의 거래대금</b>이 폭발하는 진짜 대장주만 스캔합니다.</li>
+            <li><b>안전망 필터링:</b> 스팩, ETF 및 <b>-2% 이하 급락주</b>는 단타 대상에서 즉시 제외합니다.</li>
+            <li><b>AI 스코어 정렬:</b> 수급/탄력을 분석하여 <b>10분 뒤 상승 확률</b>이 가장 높은 10개를 뽑습니다.</li>
+        </ul>
+    </div>
+    <div class="guide-box">
+        <div class="guide-title" style="color: #3b82f6;">📊 100% 활용하는 보는 법</div>
+        <ul class="guide-list">
+            <li><b>🔥 돌파:</b> 수급이 500억 이상 터지며 <b>+7% 이상 급등</b>으로 저항을 뚫는 추세 타점입니다.</li>
+            <li><b>💧 눌림:</b> 수급 유입 후 <b>+1~5% 구간</b>에서 잠시 숨을 고르는 단기 반등 타점입니다.</li>
+            <li><b>🚀 AI 스코어:</b> 점수가 높을수록 현재 시장의 돈이 가장 강력하게 쏠려있음을 의미합니다!</li>
+        </ul>
+    </div>
+</div>
+""", unsafe_allow_html=True)
