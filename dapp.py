@@ -39,30 +39,35 @@ st.markdown("""
     /* 🏢 회사명 아주 작게 구석으로 배치 */
     .company-sub { font-size: 0.8rem !important; color: #888888 !important; font-weight: 700; text-align: left; margin-bottom: -5px; }
     
-    /* 🕒 중앙 정렬 초거대 디지털 시계 디자인 */
-    .center-clock-container { text-align: center; margin-top: -10px; margin-bottom: 5px; }
-    #clockDisplay { font-size: 3.5rem !important; font-weight: 900 !important; color: #ffffff !important; background-color: #000000 !important; padding: 0px 20px; border-radius: 8px; display: inline-block; letter-spacing: 2px; box-shadow: 0px 0px 10px rgba(255,255,255,0.2); }
+    /* 🕒 중앙 정렬 디지털 시계 (날짜 포함, 크기 1/3로 축소) */
+    .center-clock-container { text-align: center; margin-top: -10px; margin-bottom: 2px; }
+    #clockDisplay { font-size: 1.3rem !important; font-weight: 800 !important; color: #ffffff !important; background-color: #111111 !important; padding: 2px 15px; border-radius: 6px; display: inline-block; letter-spacing: 1px; box-shadow: 0px 0px 5px rgba(0,0,0,0.5); }
     
-    /* 🎯 테이블 헤더 타이틀 크기 확대 */
-    .table-title { font-size: 1.5rem !important; font-weight: 900 !important; color: #FF4B4B !important; margin-top: 5px; margin-bottom: 5px; text-align: center; }
+    /* 🎯 테이블 헤더 타이틀 크기 */
+    .table-title { font-size: 1.3rem !important; font-weight: 900 !important; color: #FF4B4B !important; margin-top: 2px; margin-bottom: 2px; text-align: center; }
 </style>
 """, unsafe_allow_html=True)
 
 # 🏢 상단 한구석 회사명 표시
 st.markdown("<div class='company-sub'>주식회사 하이모바일 LIVE</div>", unsafe_allow_html=True)
 
-# 🕒 정중앙 배치 초거대 디지털 시계 구조
+# 🕒 정중앙 배치 날짜+디지털 시계 구조 (1/3 크기)
 st.markdown("""
     <div class='center-clock-container'>
-        <div id="clockDisplay">00:00:00</div>
+        <div id="clockDisplay">0000-00-00 00:00:00</div>
     </div>
     <script>
         function updateClock() {
             var now = new Date();
+            var year = now.getFullYear();
+            var month = (now.getMonth() + 1).toString().padStart(2, '0');
+            var date = now.getDate().toString().padStart(2, '0');
             var hours = now.getHours().toString().padStart(2, '0');
             var minutes = now.getMinutes().toString().padStart(2, '0');
             var seconds = now.getSeconds().toString().padStart(2, '0');
-            var timeString = hours + ':' + minutes + ':' + seconds;
+            
+            // 날짜와 시간을 합친 포맷
+            var timeString = year + '-' + month + '-' + date + ' ' + hours + ':' + minutes + ':' + seconds;
             
             var clockElement = document.getElementById('clockDisplay');
             if (clockElement) {
@@ -80,10 +85,14 @@ components.html("""
     <script>
         function updateClock() {
             var now = new Date();
+            var year = now.getFullYear();
+            var month = (now.getMonth() + 1).toString().padStart(2, '0');
+            var date = now.getDate().toString().padStart(2, '0');
             var hours = now.getHours().toString().padStart(2, '0');
             var minutes = now.getMinutes().toString().padStart(2, '0');
             var seconds = now.getSeconds().toString().padStart(2, '0');
-            var timeString = hours + ':' + minutes + ':' + seconds;
+            
+            var timeString = year + '-' + month + '-' + date + ' ' + hours + ':' + minutes + ':' + seconds;
             
             var clockElements = window.parent.document.querySelectorAll('#clockDisplay');
             clockElements.forEach(function(el) {
@@ -168,18 +177,18 @@ def get_market_indices_v2():
     except: usd = pd.DataFrame()
     return ks, kq, usd
 
-# 📺 [텍스트 전원 검정색 전광판] 수치 가독성 조절
 def get_dynamic_metric_html(title, value_str, delta_str, status="up"):
     text_color = "#000000"
     if status == "up": bg_color = "#ffdddd"; border_color = "#FF4B4B"
     elif status == "down": bg_color = "#cce5ff"; border_color = "#3b82f6"
     else: bg_color = "#f0f0f0"; border_color = "#888888"
         
+    # 여백을 약간 줄여 세로 공간 확보
     return f"""
-    <div style="background-color: {bg_color}; border-left: 5px solid {border_color}; border-radius: 4px; padding: 4px; text-align: center; line-height: 1.1; margin-bottom: 5px;">
-        <div style="font-size: 0.9rem; color: {text_color}; font-weight: 800;">{title}</div>
-        <div style="font-size: 1.4rem; color: {text_color}; font-weight: 900; margin: 1px 0;">{value_str}</div>
-        <div style="font-size: 0.9rem; color: {text_color}; font-weight: 800;">{delta_str}</div>
+    <div style="background-color: {bg_color}; border-left: 5px solid {border_color}; border-radius: 4px; padding: 2px 4px; text-align: center; line-height: 1.1; margin-bottom: 2px;">
+        <div style="font-size: 0.85rem; color: {text_color}; font-weight: 800;">{title}</div>
+        <div style="font-size: 1.25rem; color: {text_color}; font-weight: 900; margin: 1px 0;">{value_str}</div>
+        <div style="font-size: 0.85rem; color: {text_color}; font-weight: 800;">{delta_str}</div>
     </div>
     """
 
@@ -273,10 +282,10 @@ with c5:
     html_score = get_dynamic_metric_html("시장 매력도", f"{score} 점", "시장 탄력도", "up" if score >= 50 else "down")
     st.markdown(html_score, unsafe_allow_html=True)
 
-st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 📊 커스텀 HTML 전광판 테이블 (종목명 크기 극대화)
+# 📊 커스텀 HTML 전광판 테이블 (10개 한 화면 압축 뷰)
 # -----------------------------------------------------------------------------
 if pre_market_mode: st.markdown("<div class='table-title'>🎯 장전 갭상승 예상지표 Top 10</div>", unsafe_allow_html=True)
 elif after_market_mode: st.markdown("<div class='table-title'>🌙 시간외 단일가 수급지표 Top 10</div>", unsafe_allow_html=True)
@@ -305,7 +314,6 @@ if not df_universe.empty:
         extra_df = fetch_after_market_data(top_10)
         top_10 = pd.merge(top_10, extra_df, on='종목코드', how='left').sort_values(by='_sort_ratio_num', ascending=False)
 
-    # 출력용 딕셔너리 생성 ('순위' 컬럼 명시적 추가)
     output_dict = {
         '순위': [f"{i}위" for i in range(1, len(top_10) + 1)],
         '테마': top_10['테마'], 
@@ -326,29 +334,28 @@ if not df_universe.empty:
     output_dict['거래대금(백만)'] = top_10['거래대금'].apply(lambda x: f"{int(x):,}")
     output_df = pd.DataFrame(output_dict).reset_index(drop=True)
     
-    # 💡 HTML 테이블 커스텀 렌더링 시작
+    # 💡 한 화면에 10개가 쏙 들어가도록 여백(padding)을 대폭 줄임
     html_table = "<table style='width: 100%; border-collapse: collapse; text-align: center; background-color: #ffffff;'>"
     
-    # 헤더 생성
-    html_table += "<thead><tr style='background-color: #f2f2f2; border-bottom: 3px solid #000000;'>"
+    # 헤더 높이/글자 축소
+    html_table += "<thead><tr style='background-color: #f2f2f2; border-bottom: 2px solid #000000;'>"
     for col in output_df.columns:
-        html_table += f"<th style='padding: 10px; font-size: 1.1rem; font-weight: 800; color: #000000;'>{col}</th>"
+        html_table += f"<th style='padding: 6px; font-size: 1.0rem; font-weight: 800; color: #000000;'>{col}</th>"
     html_table += "</tr></thead><tbody>"
     
-    # 데이터 열 생성 (종목명 글씨만 2.2rem으로 대폭 확대!)
+    # 데이터 행 여백 축소 & 폰트 최적화
     for _, row in output_df.iterrows():
         html_table += "<tr style='border-bottom: 1px solid #dddddd;'>"
         for col in output_df.columns:
             if col == '종목명':
-                # 종목명: 크기 2.2rem, 가장 두꺼운 폰트(900), 완전한 검정색
-                html_table += f"<td style='padding: 12px 10px; font-size: 2.2rem; font-weight: 900; color: #000000; letter-spacing: -1px;'>{row[col]}</td>"
+                # 종목명: 크기 1.8rem (기존 2.2에서 살짝 줄여 10개가 다 들어가게 함)
+                html_table += f"<td style='padding: 4px 6px; font-size: 1.8rem; font-weight: 900; color: #000000; letter-spacing: -1px;'>{row[col]}</td>"
             else:
-                # 나머지 정보: 크기 1.3rem, 진한 회색/검정색
-                html_table += f"<td style='padding: 12px 10px; font-size: 1.3rem; font-weight: 700; color: #333333;'>{row[col]}</td>"
+                # 나머지 정보: 크기 1.1rem
+                html_table += f"<td style='padding: 4px 6px; font-size: 1.1rem; font-weight: 700; color: #333333;'>{row[col]}</td>"
         html_table += "</tr>"
     html_table += "</tbody></table>"
     
-    # 화면에 HTML 렌더링
     st.markdown(html_table, unsafe_allow_html=True)
     
 else:
