@@ -28,10 +28,10 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 # 📺 [초압축 와이드 뷰] 레이아웃 설정
 st.set_page_config(layout="wide", page_title="🔴 하이모바일 주식 대시보드 LIVE", initial_sidebar_state="collapsed")
 
-# 📺 모바일 가로 송출 최적화 + 예쁜 디자인 CSS
+# 📺 모바일 가로 송출 최적화 + 역동적 애니메이션 CSS 추가
 st.markdown("""
 <style>
-    /* 여백 제로화 (세로 공간 100% 확보) */
+    /* 여백 제로화 */
     .block-container { padding-top: 0.1rem !important; padding-bottom: 0rem !important; padding-left: 0.3rem !important; padding-right: 0.3rem !important; max-width: 100%; }
     #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
     [data-testid="column"] { padding-left: 0.15rem !important; padding-right: 0.15rem !important; }
@@ -47,30 +47,25 @@ st.markdown("""
     .table-title { font-size: 1.2rem !important; font-weight: 900 !important; color: #FF4B4B !important; margin-top: 2px; margin-bottom: 2px; text-align: center; }
     
     /* ✨ 예쁜 커스텀 테이블 디자인 */
-    .custom-stock-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        text-align: center;
-        background-color: #ffffff;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* 그림자 효과 */
-        margin-top: 2px;
-    }
-    .custom-stock-table thead tr {
-        background-color: #1e293b; /* 세련된 다크 네이비 헤더 */
-        color: #ffffff;
-    }
-    /* 10개가 쏙 들어가도록 패딩(여백)을 대폭 줄임 */
+    .custom-stock-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: center; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 2px; }
+    .custom-stock-table thead tr { background-color: #1e293b; color: #ffffff; }
     .custom-stock-table th { padding: 6px 5px; font-size: 0.95rem; font-weight: 700; }
     .custom-stock-table td { padding: 3px 5px; border-bottom: 1px solid #f1f5f9; }
-    .custom-stock-table tbody tr:nth-of-type(even) { background-color: #f8fafc; } /* 얼룩무늬 효과 */
+    .custom-stock-table tbody tr:nth-of-type(even) { background-color: #f8fafc; } 
     
-    .stock-name-cell { font-size: 1.6rem; font-weight: 900; color: #0f172a; letter-spacing: -1px; } /* 종목명 거대화 */
-    .up-color { color: #ef4444 !important; } /* 상승 빨강 */
-    .down-color { color: #3b82f6 !important; } /* 하락 파랑 */
-    .flat-color { color: #64748b !important; } /* 보합 회색 */
+    .stock-name-cell { font-size: 1.6rem; font-weight: 900; color: #0f172a; letter-spacing: -1px; } 
+    .up-color { color: #ef4444 !important; } 
+    .down-color { color: #3b82f6 !important; } 
+    .flat-color { color: #64748b !important; } 
+
+    /* 🚀 1. 흐르는 시세 전광판 (Marquee) 애니메이션 */
+    .marquee-container { width: 100%; overflow: hidden; background-color: #0f172a; color: white; padding: 6px 0; border-radius: 4px; box-shadow: inset 0px 0px 10px rgba(0,0,0,0.5); margin-bottom: 4px; white-space: nowrap; position: relative;}
+    .marquee-content { display: inline-block; animation: scroll-left 25s linear infinite; font-size: 1.1rem; font-weight: 800; }
+    @keyframes scroll-left { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
+    
+    /* ⏱️ 2. 60초 스캐너 장전 게이지 바 */
+    .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 3px; height: 4px; margin-bottom: 4px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
+    #scanProgressBar { height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa, #ef4444); width: 0%; transition: width 0.1s linear; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -91,7 +86,6 @@ st.markdown("""
             var hours = now.getHours().toString().padStart(2, '0');
             var minutes = now.getMinutes().toString().padStart(2, '0');
             var seconds = now.getSeconds().toString().padStart(2, '0');
-            
             var timeString = year + '-' + month + '-' + date + ' ' + hours + ':' + minutes + ':' + seconds;
             var clockElement = document.getElementById('clockDisplay');
             if (clockElement) clockElement.innerText = timeString;
@@ -124,7 +118,7 @@ components.html("""
 KST = timezone(timedelta(hours=9))
 
 THEME_DICT = {
-    "🤖 로봇": ["두산로보틱스", "레인보우로보틱스", "뉴로메카", "에스피지", "로보티즈", "이랜시스", "로보틱스"],
+    "🤖 로봇": ["두산로보틱스", "레인보우로보틱스", "뉴로메카", "에스피지", "로보티즈", "이랜시스", "로보틱스", "로보스타"],
     "💾 반도체": ["한미반도체", "SK하이닉스", "삼성전자", "HPSP", "이수페타시스", "제우스", "가온칩스", "리노공업", "디아이"],
     "🔋 2차전지": ["에코프로", "에코프로비엠", "에코프로머티", "포스코홀딩스", "POSCO홀딩스", "LG에너지솔루션", "엘앤에프", "금양"],
     "🧬 바이오": ["알테오젠", "HLB", "삼성바이오로직스", "셀트리온", "삼천당제약", "리가켐바이오", "휴젤"],
@@ -264,6 +258,35 @@ try:
 except ImportError: pass
 
 # -----------------------------------------------------------------------------
+# 🚀 실시간 데이터 패치 및 필터링 (전광판과 표에 모두 쓰기 위해 위로 배치)
+# -----------------------------------------------------------------------------
+df_universe = get_kis_top_trading_value_stocks()
+top_10 = pd.DataFrame()
+ticker_html_str = "실시간 데이터를 불러오는 중입니다..."
+
+if not df_universe.empty:
+    df_universe = df_universe[df_universe['등락률'] > -2.0].copy()
+    df_universe['10분_상승예측(%)'] = ((df_universe['등락률'] * 0.5) + np.log1p(df_universe['거래대금'])).round(2)
+    df_universe['테마'] = df_universe['종목명'].apply(get_theme_icon)
+    df_universe['매매상태'] = df_universe.apply(lambda r: "🔥 돌파" if r['등락률'] >= 7.0 and r['거래대금'] > 50000 else ("💧 눌림" if 1.0 <= r['등락률'] < 5.0 and r['거래대금'] > 20000 else "▪️ 관망"), axis=1)
+    
+    top_10 = df_universe.sort_values(by='10분_상승예측(%)', ascending=False).head(10)
+    
+    if pre_mode:
+        extra_df = fetch_pre_market_data(top_10)
+        if not extra_df.empty: top_10 = pd.merge(top_10, extra_df, on='종목코드', how='left').sort_values(by='_sort_ratio', ascending=False)
+    elif after_mode:
+        extra_df = fetch_after_market_data(top_10)
+        if not extra_df.empty: top_10 = pd.merge(top_10, extra_df, on='종목코드', how='left').sort_values(by='_sort_ratio', ascending=False)
+
+    # 🚀 Ticker(시세 띠)용 문자열 생성
+    ticker_items = []
+    for _, row in top_10.iterrows():
+        color = "#ef4444" if row['등락률'] > 0 else "#3b82f6" if row['등락률'] < 0 else "#ffffff"
+        ticker_items.append(f"<span style='color:#fbbf24;'>{row['종목명']}</span> <span style='color:{color};'>{row['등락률']:+.2f}%</span>")
+    ticker_html_str = "&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;".join(ticker_items * 3) # 텍스트가 끊기지 않게 3번 복제
+
+# -----------------------------------------------------------------------------
 # [상단 1열] 지수 & 외인 전광판
 # -----------------------------------------------------------------------------
 ks_df, kq_df, usd_df = get_market_indices_v2()
@@ -282,32 +305,60 @@ with c5:
     score = min(100, max(0, int(50 + (ff_net / 10))))
     st.markdown(get_dynamic_metric_html("시장 매력도", f"{score} 점", "시장 탄력도", "up" if score >= 50 else "down"), unsafe_allow_html=True)
 
-st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
+# -----------------------------------------------------------------------------
+# 🚀 역동적 애니메이션 (시세 흐름 띠 + 타이머 게이지) 삽입
+# -----------------------------------------------------------------------------
+st.markdown(f"""
+    <div class="marquee-container">
+        <div class="marquee-content">
+            🔥 [하이모바일 LIVE 실시간 주도주 스캔] &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp; {ticker_html_str}
+        </div>
+    </div>
+    
+    <div class="progress-container">
+        <div id="scanProgressBar"></div>
+    </div>
+    
+    <script>
+        var startTime = Date.now();
+        function updateProgress() {
+            var elapsed = Date.now() - startTime;
+            var percent = (elapsed % 60000) / 60000 * 100; // 60초(60000ms) 기준으로 0~100% 계산
+            
+            // Streamlit 부모 창의 DOM에도 접근 시도
+            var bar = document.getElementById('scanProgressBar');
+            if(bar) bar.style.width = percent + '%';
+            
+            var parentBar = window.parent.document.getElementById('scanProgressBar');
+            if(parentBar) parentBar.style.width = percent + '%';
+        }
+        setInterval(updateProgress, 100); // 0.1초마다 아주 부드럽게 게이지 상승
+    </script>
+""", unsafe_allow_html=True)
+
+# 스트림릿 내장 브라우저용 타이머 대체 스크립트
+components.html("""
+    <script>
+        var startTime = Date.now();
+        function updateProgress() {
+            var elapsed = Date.now() - startTime;
+            var percent = (elapsed % 60000) / 60000 * 100;
+            var bars = window.parent.document.querySelectorAll('#scanProgressBar');
+            bars.forEach(function(el) { el.style.width = percent + '%'; });
+        }
+        setInterval(updateProgress, 100);
+    </script>
+""", height=0, width=0)
+
 
 # -----------------------------------------------------------------------------
-# 📊 커스텀 HTML 전광판 테이블
+# 📊 커스텀 HTML 전광판 테이블 (본문)
 # -----------------------------------------------------------------------------
 if pre_mode: st.markdown("<div class='table-title'>🎯 장전 갭상승 예상지표 Top 10</div>", unsafe_allow_html=True)
 elif after_mode: st.markdown("<div class='table-title'>🌙 시간외 단일가 수급지표 Top 10</div>", unsafe_allow_html=True)
 else: st.markdown("<div class='table-title'>📈 실시간 AI 주도성 랭킹 Top 10</div>", unsafe_allow_html=True)
 
-df_universe = get_kis_top_trading_value_stocks()
-
-if not df_universe.empty:
-    df_universe = df_universe[df_universe['등락률'] > -2.0].copy()
-    df_universe['10분_상승예측(%)'] = ((df_universe['등락률'] * 0.5) + np.log1p(df_universe['거래대금'])).round(2)
-    df_universe['테마'] = df_universe['종목명'].apply(get_theme_icon)
-    df_universe['매매상태'] = df_universe.apply(lambda r: "🔥 돌파" if r['등락률'] >= 7.0 and r['거래대금'] > 50000 else ("💧 눌림" if 1.0 <= r['등락률'] < 5.0 and r['거래대금'] > 20000 else "▪️ 관망"), axis=1)
-    
-    top_10 = df_universe.sort_values(by='10분_상승예측(%)', ascending=False).head(10)
-    
-    if pre_mode:
-        extra_df = fetch_pre_market_data(top_10)
-        if not extra_df.empty: top_10 = pd.merge(top_10, extra_df, on='종목코드', how='left').sort_values(by='_sort_ratio', ascending=False)
-    elif after_mode:
-        extra_df = fetch_after_market_data(top_10)
-        if not extra_df.empty: top_10 = pd.merge(top_10, extra_df, on='종목코드', how='left').sort_values(by='_sort_ratio', ascending=False)
-
+if not top_10.empty:
     # 출력용 딕셔너리 생성
     output_dict = {
         '순위': [f"{i}위" for i in range(1, len(top_10) + 1)],
@@ -318,15 +369,14 @@ if not df_universe.empty:
         '상승률': [f"{x:+.2f} %" for x in top_10['등락률']],
     }
     
-    if pre_mode and not extra_df.empty:
+    if pre_mode and '☀️ 갭상승률' in top_10.columns:
         output_dict['☀️ 갭상승률'], output_dict['☀️ 체결가'] = top_10['☀️ 갭상승률'].values, top_10['☀️ 예상 체결가'].values
-    elif after_mode and not extra_df.empty:
+    elif after_mode and '시간외 등락률' in top_10.columns:
         output_dict['🌙 시간외 등락'], output_dict['🌙 시간외 가'] = top_10['시간외 등락률'].values, top_10['시간외 현재가'].values
         
     output_dict['거래대금(백만)'] = [f"{int(x):,}" for x in top_10['거래대금']]
     output_df = pd.DataFrame(output_dict)
     
-    # 💡 [핵심] HTML 테이블 생성 (동적 색상 & 콤팩트 패딩)
     html_table = "<table class='custom-stock-table'><thead><tr>"
     for col in output_df.columns: html_table += f"<th>{col}</th>"
     html_table += "</tr></thead><tbody>"
@@ -342,7 +392,6 @@ if not df_universe.empty:
                 if '+' in val: color_cls = 'up-color'
                 elif '-' in val: color_cls = 'down-color'
             elif '현재가' in col or '체결가' in col or '가' in col[-1:]:
-                # 현재가 칸도 상승/하락률의 부호를 따라가도록 색칠
                 rate_col = [c for c in output_df.columns if '상승률' in c or '등락' in c][0]
                 if '+' in str(row[rate_col]): color_cls = 'up-color'
                 elif '-' in str(row[rate_col]): color_cls = 'down-color'
@@ -360,4 +409,4 @@ if not df_universe.empty:
     
     st.markdown(html_table, unsafe_allow_html=True)
 else:
-    st.error("데이터 로드 중입니다...")
+    st.error("데이터를 수집 중입니다. 장 시작 전이거나 네트워크 상태를 확인해주세요.")
