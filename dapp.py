@@ -43,13 +43,59 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 🏢 메인 타이틀
+# 🏢 메인 타이틀 & 🕒 실시간 자바스크립트 시계
 st.markdown("""
-    <div style='margin-bottom: 2px;'>
-        <span class='main-title'>🔴 [LIVE] 스캐너 24H</span>
-        <span class='company-name'>| 주식회사 하이모바일</span>
+    <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;'>
+        <div>
+            <span class='main-title'>🔴 [LIVE] 스캐너 24H</span>
+            <span class='company-name'>| 주식회사 하이모바일</span>
+        </div>
+        <div id="clockDisplay" style="font-size: 1.2rem; font-weight: 900; color: #000000; background-color: #f0f0f0; padding: 2px 10px; border-radius: 5px; border: 1px solid #ccc;">
+            로딩 중...
+        </div>
     </div>
+    <script>
+        function updateClock() {
+            var now = new Date();
+            var hours = now.getHours().toString().padStart(2, '0');
+            var minutes = now.getMinutes().toString().padStart(2, '0');
+            var seconds = now.getSeconds().toString().padStart(2, '0');
+            var timeString = hours + ':' + minutes + ':' + seconds;
+            
+            // Streamlit의 iframe 안에서 실행되므로, 부모(parent) 창에도 시계를 업데이트 시도
+            var clockElement = document.getElementById('clockDisplay');
+            if (clockElement) {
+                clockElement.innerText = timeString;
+            } else if (window.parent.document.getElementById('clockDisplay')) {
+                window.parent.document.getElementById('clockDisplay').innerText = timeString;
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
 """, unsafe_allow_html=True)
+
+# 스트림릿 환경에서 HTML 내장 JS가 DOM을 찾지 못할 때를 대비한 대체(Fallback) HTML 컴포넌트
+import streamlit.components.v1 as components
+components.html("""
+    <script>
+        function updateClock() {
+            var now = new Date();
+            var hours = now.getHours().toString().padStart(2, '0');
+            var minutes = now.getMinutes().toString().padStart(2, '0');
+            var seconds = now.getSeconds().toString().padStart(2, '0');
+            var timeString = hours + ':' + minutes + ':' + seconds;
+            
+            var clockElements = window.parent.document.querySelectorAll('#clockDisplay');
+            clockElements.forEach(function(el) {
+                el.innerText = timeString;
+            });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+""", height=0, width=0)
+
 
 KST = timezone(timedelta(hours=9))
 
@@ -126,17 +172,16 @@ def get_market_indices_v2():
 
 # 📺 [텍스트 강제 검정색 + 배경색 + NaN 방어 로직]
 def get_dynamic_metric_html(title, value_str, delta_str, status="up"):
-    # 글씨는 무조건 뚜렷한 검정색으로 고정
     text_color = "#000000"
     
     if status == "up":
-        bg_color = "#ffdddd" # 검정 글씨가 잘 보이도록 밝은 붉은색(파스텔톤) 배경
+        bg_color = "#ffdddd"
         border_color = "#FF4B4B"
     elif status == "down":
-        bg_color = "#cce5ff" # 밝은 파란색(파스텔톤) 배경
+        bg_color = "#cce5ff"
         border_color = "#3b82f6"
     else:
-        bg_color = "#f0f0f0" # 밝은 회색 배경
+        bg_color = "#f0f0f0"
         border_color = "#888888"
         
     return f"""
@@ -152,7 +197,6 @@ def display_index_metric_custom(df, title):
         st.markdown(get_dynamic_metric_html(title, "N/A", "데이터 없음", "flat"), unsafe_allow_html=True)
         return
         
-    # 데이터에서 빈 값(NaN) 완전 제거하여 계산 오류 방어
     df_clean = df['Close'].dropna()
     if len(df_clean) == 0:
         st.markdown(get_dynamic_metric_html(title, "N/A", "데이터 없음", "flat"), unsafe_allow_html=True)
@@ -164,7 +208,6 @@ def display_index_metric_custom(df, title):
     delta = current_val - prev_val
     delta_percent = (delta / prev_val) * 100 if prev_val != 0 else 0
     
-    # 혹시 모를 추가 nan 발생 방어
     if pd.isna(delta) or pd.isna(delta_percent):
         delta, delta_percent = 0.0, 0.0
         
@@ -232,7 +275,8 @@ elif time_after_start <= now_time < time_after_end:
 
 try:
     from streamlit_autorefresh import st_autorefresh
-    st_autorefresh(interval=60000, limit=10000, key="auto_scanner_refresh")
+    # 전체 갱신 주기를 약간 길게(90초) 늘려 메모리 부하를 줄입니다. (시계는 JS가 초마다 알아서 돌림)
+    st_autorefresh(interval=90000, limit=10000, key="auto_scanner_refresh")
 except ImportError: pass
 
 # -----------------------------------------------------------------------------
