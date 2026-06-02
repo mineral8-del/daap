@@ -28,43 +28,46 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 # 📺 [초압축 와이드 뷰] 레이아웃 설정
 st.set_page_config(layout="wide", page_title="🔴 하이모바일 주식 대시보드 LIVE", initial_sidebar_state="collapsed")
 
-# 📺 모바일 가로 송출 최적화 + 역동적 애니메이션 CSS 추가
+# 📺 모바일 가로 송출 극강의 세로 압축 + 예쁜 디자인 CSS
 st.markdown("""
 <style>
-    /* 여백 제로화 */
-    .block-container { padding-top: 0.1rem !important; padding-bottom: 0rem !important; padding-left: 0.3rem !important; padding-right: 0.3rem !important; max-width: 100%; }
+    /* 💡 세로 공백 파괴 (상단 여백 0) */
+    .block-container { padding-top: 0rem !important; padding-bottom: 0rem !important; padding-left: 0.2rem !important; padding-right: 0.2rem !important; max-width: 100%; }
     #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
-    [data-testid="column"] { padding-left: 0.15rem !important; padding-right: 0.15rem !important; }
+    [data-testid="column"] { padding-left: 0.1rem !important; padding-right: 0.1rem !important; }
     
-    /* 🏢 회사명 */
-    .company-sub { font-size: 0.8rem !important; color: #888888 !important; font-weight: 700; text-align: left; margin-bottom: -5px; }
+    /* 🏢 회사명 구석 배치 */
+    .company-sub { font-size: 0.75rem !important; color: #888888 !important; font-weight: 700; text-align: left; margin-bottom: -8px; }
     
-    /* 🕒 중앙 정렬 디지털 시계 */
-    .center-clock-container { text-align: center; margin-top: -10px; margin-bottom: 2px; }
-    #clockDisplay { font-size: 1.25rem !important; font-weight: 800 !important; color: #ffffff !important; background-color: #111111 !important; padding: 2px 15px; border-radius: 6px; display: inline-block; letter-spacing: 1px; box-shadow: 0px 4px 6px rgba(0,0,0,0.3); }
+    /* 🕒 디지털 시계 슬림화 */
+    .center-clock-container { text-align: center; margin-top: -12px; margin-bottom: 1px; }
+    #clockDisplay { font-size: 1.15rem !important; font-weight: 800 !important; color: #ffffff !important; background-color: #111111 !important; padding: 1px 12px; border-radius: 4px; display: inline-block; letter-spacing: 1px; }
     
-    /* 🎯 테이블 헤더 타이틀 */
-    .table-title { font-size: 1.2rem !important; font-weight: 900 !important; color: #FF4B4B !important; margin-top: 2px; margin-bottom: 2px; text-align: center; }
+    /* 🎯 테이블 헤더 타이틀 슬림화 */
+    .table-title { font-size: 1.1rem !important; font-weight: 900 !important; color: #FF4B4B !important; margin-top: 1px; margin-bottom: 1px; text-align: center; }
     
-    /* ✨ 예쁜 커스텀 테이블 디자인 */
-    .custom-stock-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: center; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 2px; }
+    /* ✨ 10개가 무조건 한 화면에 다 들어오도록 패딩 극강 압축 */
+    .custom-stock-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: center; background-color: #ffffff; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-top: 1px; }
     .custom-stock-table thead tr { background-color: #1e293b; color: #ffffff; }
-    .custom-stock-table th { padding: 6px 5px; font-size: 0.95rem; font-weight: 700; }
-    .custom-stock-table td { padding: 3px 5px; border-bottom: 1px solid #f1f5f9; }
+    .custom-stock-table th { padding: 4px 3px; font-size: 0.9rem; font-weight: 700; }
+    
+    /* 💡 td 여백을 3px -> 1.5px로 줄여 세로 길이를 대폭 다이어트 */
+    .custom-stock-table td { padding: 1.5px 3px; border-bottom: 1px solid #f1f5f9; line-height: 1.1; }
     .custom-stock-table tbody tr:nth-of-type(even) { background-color: #f8fafc; } 
     
-    .stock-name-cell { font-size: 1.6rem; font-weight: 900; color: #0f172a; letter-spacing: -1px; } 
+    /* 종목명 폰트 크기를 아주 살짝 조절하여 10개 완벽 안착 */
+    .stock-name-cell { font-size: 1.45rem; font-weight: 900; color: #0f172a; letter-spacing: -1px; } 
     .up-color { color: #ef4444 !important; } 
     .down-color { color: #3b82f6 !important; } 
     .flat-color { color: #64748b !important; } 
 
-    /* 🚀 1. 흐르는 시세 전광판 (Marquee) 애니메이션 - 속도 늦춤 (40s) */
-    .marquee-container { width: 100%; overflow: hidden; background-color: #0f172a; color: white; padding: 6px 0; border-radius: 4px; box-shadow: inset 0px 0px 10px rgba(0,0,0,0.5); margin-bottom: 4px; white-space: nowrap; position: relative;}
-    .marquee-content { display: inline-block; animation: scroll-left 40s linear infinite; font-size: 1.1rem; font-weight: 800; }
+    /* 🚀 흐르는 시세 전광판 슬림화 (40초 부드러운 속도 유지) */
+    .marquee-container { width: 100%; overflow: hidden; background-color: #0f172a; color: white; padding: 4px 0; border-radius: 4px; margin-bottom: 2px; white-space: nowrap; position: relative;}
+    .marquee-content { display: inline-block; animation: scroll-left 40s linear infinite; font-size: 1.05rem; font-weight: 800; }
     @keyframes scroll-left { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
     
-    /* ⏱️ 2. 60초 스캐너 장전 게이지 바 */
-    .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 3px; height: 4px; margin-bottom: 4px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
+    /* ⏱️ 게이지 바 슬림화 */
+    .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 2px; height: 3px; margin-bottom: 2px; overflow: hidden; }
     #scanProgressBar { height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa, #ef4444); width: 0%; transition: width 0.1s linear; }
 </style>
 """, unsafe_allow_html=True)
@@ -193,10 +196,10 @@ def get_dynamic_metric_html(title, value_str, delta_str, status="up"):
     else: bg_color = "#f0f0f0"; border_color = "#888888"
         
     return f"""
-    <div style="background-color: {bg_color}; border-left: 5px solid {border_color}; border-radius: 4px; padding: 2px 4px; text-align: center; line-height: 1.1; margin-bottom: 2px;">
-        <div style="font-size: 0.8rem; color: {text_color}; font-weight: 800;">{title}</div>
-        <div style="font-size: 1.15rem; color: {text_color}; font-weight: 900; margin: 1px 0;">{value_str}</div>
-        <div style="font-size: 0.8rem; color: {text_color}; font-weight: 800;">{delta_str}</div>
+    <div style="background-color: {bg_color}; border-left: 5px solid {border_color}; border-radius: 4px; padding: 1px 3px; text-align: center; line-height: 1.05; margin-bottom: 1px;">
+        <div style="font-size: 0.75rem; color: {text_color}; font-weight: 800;">{title}</div>
+        <div style="font-size: 1.1rem; color: {text_color}; font-weight: 900; margin: 0px 0;">{value_str}</div>
+        <div style="font-size: 0.75rem; color: {text_color}; font-weight: 800;">{delta_str}</div>
     </div>
     """
 
@@ -226,7 +229,6 @@ def fetch_after_market_data(top10_df):
             if res.json().get('rt_cd') == '0':
                 out = res.json()['output']
                 results.append({'종목코드': row['종목코드'], '시간외 현재가': f"{int(float(out.get('ovtm_untp_prpr', 0))):,} 원", '시간외 등락률': f"{float(out.get('ovtm_untp_prdy_ctrt', 0)):+.2f} %", '_sort_ratio': float(out.get('ovtm_untp_prdy_ctrt', 0))})
-            # 💡 속도 완화: 0.1초 -> 0.7초 (안정적 호출)
             time.sleep(0.7) 
         except: results.append({'종목코드': row['종목코드'], '시간외 현재가': "-", '시간외 등락률': "-", '_sort_ratio': 0.0})
     return pd.DataFrame(results)
@@ -243,7 +245,6 @@ def fetch_pre_market_data(top10_df):
                 out = res.json()['output']
                 pr = float(out.get('antc_cnpr', 0) or 0.0)
                 results.append({'종목코드': row['종목코드'], '☀️ 예상 체결가': f"{int(pr):,} 원" if pr > 0 else "대기", '☀️ 갭상승률': f"{float(out.get('antc_cntg_prdy_ctrt', 0) or 0.0):+.2f} %", '_sort_ratio': float(out.get('antc_cntg_prdy_ctrt', 0) or 0.0)})
-            # 💡 속도 완화: 0.1초 -> 0.7초 (안정적 호출)
             time.sleep(0.7) 
         except: results.append({'종목코드': row['종목코드'], '☀️ 예상 체결가': "-", '☀️ 갭상승률': "-", '_sort_ratio': 0.0})
     return pd.DataFrame(results)
@@ -288,7 +289,7 @@ if not df_universe.empty:
     for _, row in top_10.iterrows():
         color = "#ef4444" if row['등락률'] > 0 else "#3b82f6" if row['등락률'] < 0 else "#ffffff"
         ticker_items.append(f"<span style='color:#fbbf24;'>{row['종목명']}</span> <span style='color:{color};'>{row['등락률']:+.2f}%</span>")
-    ticker_html_str = "&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;".join(ticker_items * 3) # 텍스트가 끊기지 않게 복제
+    ticker_html_str = "&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;".join(ticker_items * 3)
 
 # -----------------------------------------------------------------------------
 # [상단 1열] 지수 & 외인 전광판
@@ -328,10 +329,8 @@ st.markdown(f"""
         function updateProgress() {{
             var elapsed = Date.now() - startTime;
             var percent = (elapsed % 60000) / 60000 * 100;
-            
             var bar = document.getElementById('scanProgressBar');
             if(bar) bar.style.width = percent + '%';
-            
             var parentBar = window.parent.document.getElementById('scanProgressBar');
             if(parentBar) parentBar.style.width = percent + '%';
         }}
@@ -339,7 +338,6 @@ st.markdown(f"""
     </script>
 """, unsafe_allow_html=True)
 
-# 스트림릿 내장 브라우저용 타이머 대체 스크립트
 components.html("""
     <script>
         var startTime = Date.now();
@@ -361,7 +359,6 @@ elif after_mode: st.markdown("<div class='table-title'>🌙 시간외 단일가 
 else: st.markdown("<div class='table-title'>📈 실시간 AI 주도성 랭킹 Top 10</div>", unsafe_allow_html=True)
 
 if not top_10.empty:
-    # 출력용 딕셔너리 생성
     output_dict = {
         '순위': [f"{i}위" for i in range(1, len(top_10) + 1)],
         '테마': top_10['테마'].values, '상태': top_10['매매상태'].values,
@@ -387,8 +384,6 @@ if not top_10.empty:
         html_table += "<tr>"
         for col in output_df.columns:
             val = str(row[col])
-            
-            # 동적 색상 판별 로직
             color_cls = 'flat-color'
             if '상승률' in col or '등락' in col:
                 if '+' in val: color_cls = 'up-color'
@@ -398,7 +393,6 @@ if not top_10.empty:
                 if '+' in str(row[rate_col]): color_cls = 'up-color'
                 elif '-' in str(row[rate_col]): color_cls = 'down-color'
 
-            # 열별 CSS 스타일링
             if col == '종목명': style = "class='stock-name-cell'"
             elif col in ['현재가', '상승률', '☀️ 갭상승률', '☀️ 체결가', '🌙 시간외 등락', '🌙 시간외 가']: style = f"class='{color_cls}' style='font-size: 1.25rem; font-weight: 800;'"
             elif col == '순위': style = "style='font-size: 1.1rem; font-weight: 900; color: #555;'"
