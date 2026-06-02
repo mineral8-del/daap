@@ -58,9 +58,9 @@ st.markdown("""
     .down-color { color: #3b82f6 !important; } 
     .flat-color { color: #64748b !important; } 
 
-    /* 🚀 1. 흐르는 시세 전광판 (Marquee) 애니메이션 */
+    /* 🚀 1. 흐르는 시세 전광판 (Marquee) 애니메이션 - 속도 늦춤 (40s) */
     .marquee-container { width: 100%; overflow: hidden; background-color: #0f172a; color: white; padding: 6px 0; border-radius: 4px; box-shadow: inset 0px 0px 10px rgba(0,0,0,0.5); margin-bottom: 4px; white-space: nowrap; position: relative;}
-    .marquee-content { display: inline-block; animation: scroll-left 25s linear infinite; font-size: 1.1rem; font-weight: 800; }
+    .marquee-content { display: inline-block; animation: scroll-left 40s linear infinite; font-size: 1.1rem; font-weight: 800; }
     @keyframes scroll-left { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
     
     /* ⏱️ 2. 60초 스캐너 장전 게이지 바 */
@@ -226,6 +226,8 @@ def fetch_after_market_data(top10_df):
             if res.json().get('rt_cd') == '0':
                 out = res.json()['output']
                 results.append({'종목코드': row['종목코드'], '시간외 현재가': f"{int(float(out.get('ovtm_untp_prpr', 0))):,} 원", '시간외 등락률': f"{float(out.get('ovtm_untp_prdy_ctrt', 0)):+.2f} %", '_sort_ratio': float(out.get('ovtm_untp_prdy_ctrt', 0))})
+            # 💡 속도 완화: 0.1초 -> 0.7초 (안정적 호출)
+            time.sleep(0.7) 
         except: results.append({'종목코드': row['종목코드'], '시간외 현재가': "-", '시간외 등락률': "-", '_sort_ratio': 0.0})
     return pd.DataFrame(results)
 
@@ -241,6 +243,8 @@ def fetch_pre_market_data(top10_df):
                 out = res.json()['output']
                 pr = float(out.get('antc_cnpr', 0) or 0.0)
                 results.append({'종목코드': row['종목코드'], '☀️ 예상 체결가': f"{int(pr):,} 원" if pr > 0 else "대기", '☀️ 갭상승률': f"{float(out.get('antc_cntg_prdy_ctrt', 0) or 0.0):+.2f} %", '_sort_ratio': float(out.get('antc_cntg_prdy_ctrt', 0) or 0.0)})
+            # 💡 속도 완화: 0.1초 -> 0.7초 (안정적 호출)
+            time.sleep(0.7) 
         except: results.append({'종목코드': row['종목코드'], '☀️ 예상 체결가': "-", '☀️ 갭상승률': "-", '_sort_ratio': 0.0})
     return pd.DataFrame(results)
 
@@ -258,7 +262,7 @@ try:
 except ImportError: pass
 
 # -----------------------------------------------------------------------------
-# 🚀 실시간 데이터 패치 및 필터링 (전광판과 표에 모두 쓰기 위해 위로 배치)
+# 🚀 실시간 데이터 패치 및 필터링
 # -----------------------------------------------------------------------------
 df_universe = get_kis_top_trading_value_stocks()
 top_10 = pd.DataFrame()
@@ -284,7 +288,7 @@ if not df_universe.empty:
     for _, row in top_10.iterrows():
         color = "#ef4444" if row['등락률'] > 0 else "#3b82f6" if row['등락률'] < 0 else "#ffffff"
         ticker_items.append(f"<span style='color:#fbbf24;'>{row['종목명']}</span> <span style='color:{color};'>{row['등락률']:+.2f}%</span>")
-    ticker_html_str = "&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;".join(ticker_items * 3) # 텍스트가 끊기지 않게 3번 복제
+    ticker_html_str = "&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;".join(ticker_items * 3) # 텍스트가 끊기지 않게 복제
 
 # -----------------------------------------------------------------------------
 # [상단 1열] 지수 & 외인 전광판
@@ -306,36 +310,32 @@ with c5:
     st.markdown(get_dynamic_metric_html("시장 매력도", f"{score} 점", "시장 탄력도", "up" if score >= 50 else "down"), unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 🚀 역동적 애니메이션 (시세 흐름 띠 + 타이머 게이지) 삽입 - 에러 해결!
+# 🚀 역동적 애니메이션 (시세 흐름 띠 + 타이머 게이지)
 # -----------------------------------------------------------------------------
 st.markdown(f"""
-    <!-- 1. 흐르는 전광판 (Marquee) -->
     <div class="marquee-container">
         <div class="marquee-content">
             🔥 [하이모바일 LIVE 실시간 주도주 스캔] &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp; {ticker_html_str}
         </div>
     </div>
     
-    <!-- 2. 60초 스캐너 장전 게이지 -->
     <div class="progress-container">
         <div id="scanProgressBar"></div>
     </div>
     
-    <!-- 타이머 자바스크립트 -->
     <script>
         var startTime = Date.now();
         function updateProgress() {{
             var elapsed = Date.now() - startTime;
-            var percent = (elapsed % 60000) / 60000 * 100; // 60초(60000ms) 기준으로 0~100% 계산
+            var percent = (elapsed % 60000) / 60000 * 100;
             
-            // Streamlit 부모 창의 DOM에도 접근 시도
             var bar = document.getElementById('scanProgressBar');
             if(bar) bar.style.width = percent + '%';
             
             var parentBar = window.parent.document.getElementById('scanProgressBar');
             if(parentBar) parentBar.style.width = percent + '%';
         }}
-        setInterval(updateProgress, 100); // 0.1초마다 아주 부드럽게 게이지 상승
+        setInterval(updateProgress, 100); 
     </script>
 """, unsafe_allow_html=True)
 
@@ -352,7 +352,6 @@ components.html("""
         setInterval(updateProgress, 100);
     </script>
 """, height=0, width=0)
-
 
 # -----------------------------------------------------------------------------
 # 📊 커스텀 HTML 전광판 테이블 (본문)
