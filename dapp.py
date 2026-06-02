@@ -271,4 +271,70 @@ with c3: display_index_metric_custom(usd_df, "USD/KRW")
 with c4:
     status = "up" if ff_net > 0 else "down" if ff_net < 0 else "flat"
     sign = "+" if ff_net > 0 else ""
-    html_ff = get_dynamic_metric_html("외인 선물 순매수", f"{sign}{ff_net:,} 억", "매수 우위" if ff_net > 0 else "매도 우
+    html_ff = get_dynamic_metric_html("외인 선물 순매수", f"{sign}{ff_net:,} 억", "매수 우위" if ff_net > 0 else "매도 우위" if ff_net < 0 else "대기 중", status)
+    st.markdown(html_ff, unsafe_allow_html=True)
+with c5:
+    score = min(100, max(0, int(50 + (ff_net / 10))))
+    html_score = get_dynamic_metric_html("시장 매력도", f"{score} 점", "시장 탄력도", "up" if score >= 50 else "down")
+    st.markdown(html_score, unsafe_allow_html=True)
+
+st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
+
+# -----------------------------------------------------------------------------
+# 📊 와이드 스캐너 테이블 (Top 10 압축 및 컬럼 간소화)
+# -----------------------------------------------------------------------------
+if pre_market_mode: st.markdown("<div class='table-title'>🎯 장전 갭상승 예상지표 Top 10</div>", unsafe_allow_html=True)
+elif after_market_mode: st.markdown("<div class='table-title'>🌙 시간외 단일가 수급지표 Top 10</div>", unsafe_allow_html=True)
+else: st.markdown("<div class='table-title'>📈 실시간 AI 주도성 랭킹 Top 10</div>", unsafe_allow_html=True)
+
+df_universe = get_kis_top_trading_value_stocks()
+
+if not df_universe.empty:
+    filtered_df = df_universe[df_universe['등락률'] > -2.0].copy()
+    X_live = filtered_df[['등ral률', '거래대금', '현재가']] = filtered_df[['등락률', '거래대금', '현재가']].fillna(0)
+    filtered_df['10분_상승예측(%)'] = ((filtered_df['등락률'] * 0.5) + np.log1p(filtered_df['거래대금'])).round(2)
+    filtered_df['테마'] = filtered_df['종목명'].apply(get_theme_icon)
+    
+    def detect_signal(row):
+        if row['등락률'] >= 7.0 and row['거래대금'] > 50000: return "🔥 돌파"
+        elif 1.0 <= row['등락률'] < 5.0 and row['거래대금'] > 20000: return "💧 눌림"
+        return "▪️ 관망"
+    filtered_df['매매상태'] = filtered_df.apply(detect_signal, axis=1)
+    
+    # 💡 10개만 정확히 끊어서 연산량 축소 및 화면 최적화
+    top_10 = filtered_df.sort_values(by='10분_상승예측(%)', ascending=False).head(10)
+    
+    if pre_market_mode:
+        extra_df = fetch_pre_market_data(top_10)
+        top_10 = pd.merge(top_10, extra_df, on='종목코드', how='left').sort_values(by='_sort_ratio_num', ascending=False)
+    elif after_market_mode:
+        extra_df = fetch_after_market_data(top_10)
+        top_10 = pd.merge(top_10, extra_df, on='종목코드', how='left').sort_values(by='_sort_ratio_num', ascending=False)
+
+    # 💡 요구사항 반영: 단기목표가, 손절가, 종목코드 완전 배제
+    output_dict = {
+        '테마': top_10['테마'], 
+        '실시간 상태': top_10['매매상태'], 
+        'AI 예측스코어': top_10['10분_상승예측(%)'].apply(lambda x: f"🚀 {x}점"),
+        '종목명': top_10['종목명'],
+        '전일 종가(현재가)': top_10['현재가'].apply(lambda x: f"{int(x):,} 원"),
+        '전일 상승률': top_10['등락률'].apply(lambda x: f"{x:+.2f} %"),
+    }
+    
+    if pre_market_mode:
+        output_dict['☀️ 예상 갭상승률'] = top_10['☀️ 갭상승률']
+        output_dict['☀️ 예상 체결가'] = top_10['☀️ 예상 체결가']
+    elif after_market_mode:
+        output_dict['🌙 시간외 등락률'] = top_10['시간외 등락률']
+        output_dict['🌙 시간외 현재가'] = top_10['시간외 현재가']
+        
+    output_dict['거래대금(백만)'] = top_10['거래대금'].apply(lambda x: f"{int(x):,}")
+    output_df = pd.DataFrame(output_dict).reset_index(drop=True)
+    
+    # 순위 가독성을 위해 인덱스 1부터 시작하도록 세팅
+    output_df.index = output_df.index + 1
+    
+    # 폰트가 아주 큰 상태이므로 표 높이는 500 내외로 콤팩트하게 고정해 한 화면에 들어오게 조절
+    st.dataframe(output_df, use_container_width=True, height=480)
+else:
+    st.error("데이터 로드 중입니다...")
