@@ -31,32 +31,26 @@ st.set_page_config(layout="wide", page_title="🔴 하이모바일 주식 대시
 # 📺 커스텀 CSS (여백 극강 축소 및 컬럼 밀착)
 st.markdown("""
 <style>
-    .block-container { padding-top: 1.0rem !important; padding-bottom: 0rem !important; padding-left: 1rem !important; padding-right: 1rem !important; max-width: 100%; }
+    /* 화면 상하좌우 여백 완전 제거 */
+    .block-container { padding-top: 0.5rem !important; padding-bottom: 0rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; max-width: 100%; }
     #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
     
-    [data-testid="column"] { padding-left: 0.3rem !important; padding-right: 0.3rem !important; }
+    /* 컬럼 간격 최소화 */
+    [data-testid="column"] { padding-left: 0.2rem !important; padding-right: 0.2rem !important; }
     
-    .main-title { font-size: 1.5rem !important; font-weight: 900 !important; color: #FF4B4B !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); display: inline-block; vertical-align: middle; }
-    .company-name { font-size: 1.0rem !important; color: #B0B0B0 !important; font-weight: 700 !important; margin-left: 10px; display: inline-block; vertical-align: middle; }
-    
-    h3 { font-size: 1.1rem !important; font-weight: 800 !important; color: #FFD700 !important; margin-top: 0px; margin-bottom: 5px; }
-    
-    /* 메트릭(수치) 폰트 최적화 */
-    [data-testid="stMetricValue"] { font-size: 1.8rem !important; font-weight: 900 !important; line-height: 1.0 !important; }
-    [data-testid="stMetricDelta"] { font-size: 1.0rem !important; font-weight: 700 !important; }
-    [data-testid="stMetricLabel"] { font-size: 0.9rem !important; font-weight: 600 !important; color: #888888; margin-bottom: -5px;}
+    /* 제목 텍스트 크기 축소 */
+    .main-title { font-size: 1.2rem !important; font-weight: 900 !important; color: #FF4B4B !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); display: inline-block; vertical-align: middle; }
+    .company-name { font-size: 0.8rem !important; color: #B0B0B0 !important; font-weight: 700 !important; margin-left: 8px; display: inline-block; vertical-align: middle; }
     
     /* 데이터프레임 압축 */
-    .stDataFrame { font-size: 1.0rem !important; }
-    div[data-testid="stDataFrame"] table { font-size: 1.0rem !important; font-weight: 600 !important; padding: 0px !important;}
-    
-    hr { margin-top: 0.5rem; margin-bottom: 0.5rem; border-color: #333333; border-width: 1px; }
+    .stDataFrame { font-size: 0.95rem !important; }
+    div[data-testid="stDataFrame"] table { font-size: 0.95rem !important; font-weight: 600 !important; padding: 0px !important;}
 </style>
 """, unsafe_allow_html=True)
 
-# 🏢 메인 타이틀
+# 🏢 메인 타이틀 (아래 여백을 0으로 만들어 바로 밑의 전광판과 딱 붙임)
 st.markdown("""
-    <div style='margin-bottom: 5px;'>
+    <div style='margin-bottom: 2px;'>
         <span class='main-title'>🔴 [LIVE] 스캐너 24H</span>
         <span class='company-name'>| 주식회사 하이모바일</span>
     </div>
@@ -135,15 +129,43 @@ def get_market_indices_v2():
     except: usd = pd.DataFrame()
     return ks, kq, usd
 
-def display_index_metric(df, title):
+# 📺 [초압축 동적 배경 전광판 HTML 렌더러]
+def get_dynamic_metric_html(title, value_str, delta_str, status="up"):
+    if status == "up":
+        bg_color = "rgba(255, 75, 75, 0.15)" # 붉은색 배경
+        border_color = "#FF4B4B"
+        text_color = "#FF4B4B"
+    elif status == "down":
+        bg_color = "rgba(0, 104, 201, 0.15)" # 파란색 배경
+        border_color = "#3b82f6"
+        text_color = "#3b82f6"
+    else:
+        bg_color = "rgba(128, 128, 128, 0.1)" # 회색 배경 (보합)
+        border_color = "#555555"
+        text_color = "#AAAAAA"
+        
+    return f"""
+    <div style="background-color: {bg_color}; border-left: 4px solid {border_color}; border-radius: 4px; padding: 5px; text-align: center; line-height: 1.1;">
+        <div style="font-size: 0.75rem; color: #DDDDDD; font-weight: bold;">{title}</div>
+        <div style="font-size: 1.2rem; color: {text_color}; font-weight: 900; margin: 2px 0;">{value_str}</div>
+        <div style="font-size: 0.75rem; color: {text_color}; font-weight: bold;">{delta_str}</div>
+    </div>
+    """
+
+def display_index_metric_custom(df, title):
     if df.empty:
-        st.metric(title, "N/A", "데이터 없음")
+        st.markdown(get_dynamic_metric_html(title, "N/A", "데이터 없음", "flat"), unsafe_allow_html=True)
         return
     current_val = df['Close'].iloc[-1]
     prev_val = df['Close'].iloc[-2] if len(df) > 1 else current_val
     delta = current_val - prev_val
-    delta_percent = (delta / prev_val) * 100
-    st.metric(label=title, value=f"{current_val:,.2f}", delta=f"{delta:+.2f} ({delta_percent:+.2f}%)")
+    delta_percent = (delta / prev_val) * 100 if prev_val != 0 else 0
+    
+    status = "up" if delta > 0 else "down" if delta < 0 else "flat"
+    sign = "+" if delta > 0 else ""
+    
+    html = get_dynamic_metric_html(title, f"{current_val:,.2f}", f"{sign}{delta:,.2f} ({sign}{delta_percent:.2f}%)", status)
+    st.markdown(html, unsafe_allow_html=True)
 
 @st.cache_data(ttl=60, show_spinner=False)
 def fetch_after_market_data(top30_df):
@@ -208,33 +230,37 @@ try:
 except ImportError: pass
 
 # -----------------------------------------------------------------------------
-# [상단 1열] 텍스트 전광판 (지수 3개 + 수급 2개 = 5분할)
+# [상단 1열] 텍스트 전광판 (지수 3개 + 수급 2개 = 5분할 밀착)
 # -----------------------------------------------------------------------------
-st.markdown("<hr style='margin-top: 0; margin-bottom: 5px;'>", unsafe_allow_html=True)
 ks_df, kq_df, usd_df = get_market_indices_v2()
 if 'foreign_futures_net' not in st.session_state: st.session_state.foreign_futures_net = get_foreign_investor_trend()
 ff_net = st.session_state.foreign_futures_net
 
 c1, c2, c3, c4, c5 = st.columns(5)
-with c1: display_index_metric(ks_df, "KOSPI")
-with c2: display_index_metric(kq_df, "KOSDAQ")
-with c3: display_index_metric(usd_df, "USD/KRW")
+with c1: display_index_metric_custom(ks_df, "KOSPI")
+with c2: display_index_metric_custom(kq_df, "KOSDAQ")
+with c3: display_index_metric_custom(usd_df, "USD/KRW")
 with c4:
-    if ff_net > 0: st.metric("외인 선물 순매수", f"+{ff_net:,} 억", "매수 우위", delta_color="normal")
-    elif ff_net < 0: st.metric("외인 선물 순매수", f"{ff_net:,} 억", "매도 우위", delta_color="inverse")
-    else: st.metric("외인 선물 순매수", "0.0 억", "대기 중", delta_color="off")
+    status = "up" if ff_net > 0 else "down" if ff_net < 0 else "flat"
+    sign = "+" if ff_net > 0 else ""
+    msg = "매수 우위" if ff_net > 0 else "매도 우위" if ff_net < 0 else "대기 중"
+    html_ff = get_dynamic_metric_html("외인 선물 순매수", f"{sign}{ff_net:,} 억", msg, status)
+    st.markdown(html_ff, unsafe_allow_html=True)
 with c5:
     score = min(100, max(0, int(50 + (ff_net / 10))))
-    st.metric("시장 매력도", f"{score} 점", "탄력도", delta_color="normal" if ff_net > 0 else "inverse" if ff_net < 0 else "off")
+    status_score = "up" if score > 50 else "down" if score < 50 else "flat"
+    html_score = get_dynamic_metric_html("시장 매력도", f"{score} 점", "시장 탄력도", status_score)
+    st.markdown(html_score, unsafe_allow_html=True)
 
-st.markdown("<hr style='margin-top: 10px; margin-bottom: 10px;'>", unsafe_allow_html=True)
+# 지수와 아래 테이블 사이의 간격을 띄우기 위한 얇은 여백
+st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # 📊 와이드 스캐너 테이블 (화면 꽉 채우기)
 # -----------------------------------------------------------------------------
-if pre_market_mode: st.markdown("<h3>🎯 장전 예상 갭상승 타겟 Top 30</h3>", unsafe_allow_html=True)
-elif after_market_mode: st.markdown("<h3>🌙 시간외 단일가 수급 타겟 Top 30</h3>", unsafe_allow_html=True)
-else: st.markdown("<h3>📈 실시간 돌파/눌림목 타겟 Top 30 (AI 예측 랭킹)</h3>", unsafe_allow_html=True)
+if pre_market_mode: st.markdown("<h3 style='font-size: 1.0rem !important; margin-bottom: 2px;'>🎯 장전 예상 갭상승 타겟 Top 30</h3>", unsafe_allow_html=True)
+elif after_market_mode: st.markdown("<h3 style='font-size: 1.0rem !important; margin-bottom: 2px;'>🌙 시간외 단일가 수급 타겟 Top 30</h3>", unsafe_allow_html=True)
+else: st.markdown("<h3 style='font-size: 1.0rem !important; margin-bottom: 2px;'>📈 실시간 돌파/눌림목 타겟 Top 30 (AI 예측 랭킹)</h3>", unsafe_allow_html=True)
 
 df_universe = get_kis_top_trading_value_stocks()
 
@@ -263,7 +289,6 @@ if not df_universe.empty:
         extra_df = fetch_after_market_data(top_30)
         top_30 = pd.merge(top_30, extra_df, on='종목코드', how='left').sort_values(by='_sort_ratio_num', ascending=False)
 
-    # 💡 딕셔너리 키를 올려주신 사진과 100% 동일하게 구성합니다.
     output_dict = {
         '테마': top_30['테마'], 
         '실시간 상태': top_30['매매상태'], 
@@ -288,7 +313,7 @@ if not df_universe.empty:
         
     output_df = pd.DataFrame(output_dict).reset_index(drop=True)
     
-    # 💡 좌측 체크박스를 완벽히 제거하기 위해 hide_index=True 적용
+    # 💡 좌측 체크박스(인덱스) 완전 제거 설정 유지, 세로 공간 100% 활용
     st.dataframe(output_df, use_container_width=True, height=800, hide_index=True)
 else:
     st.error("데이터 로드 중입니다...")
