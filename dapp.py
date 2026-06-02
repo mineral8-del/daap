@@ -306,22 +306,25 @@ with c5:
     st.markdown(get_dynamic_metric_html("시장 매력도", f"{score} 점", "시장 탄력도", "up" if score >= 50 else "down"), unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 🚀 역동적 애니메이션 (시세 흐름 띠 + 타이머 게이지) 삽입
+# 🚀 역동적 애니메이션 (시세 흐름 띠 + 타이머 게이지) 삽입 - 에러 해결!
 # -----------------------------------------------------------------------------
 st.markdown(f"""
+    <!-- 1. 흐르는 전광판 (Marquee) -->
     <div class="marquee-container">
         <div class="marquee-content">
             🔥 [하이모바일 LIVE 실시간 주도주 스캔] &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp; {ticker_html_str}
         </div>
     </div>
     
+    <!-- 2. 60초 스캐너 장전 게이지 -->
     <div class="progress-container">
         <div id="scanProgressBar"></div>
     </div>
     
+    <!-- 타이머 자바스크립트 -->
     <script>
         var startTime = Date.now();
-        function updateProgress() {
+        function updateProgress() {{
             var elapsed = Date.now() - startTime;
             var percent = (elapsed % 60000) / 60000 * 100; // 60초(60000ms) 기준으로 0~100% 계산
             
@@ -331,7 +334,7 @@ st.markdown(f"""
             
             var parentBar = window.parent.document.getElementById('scanProgressBar');
             if(parentBar) parentBar.style.width = percent + '%';
-        }
+        }}
         setInterval(updateProgress, 100); // 0.1초마다 아주 부드럽게 게이지 상승
     </script>
 """, unsafe_allow_html=True)
