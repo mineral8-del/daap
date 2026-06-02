@@ -28,27 +28,22 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 # 📺 [초압축 뷰] 레이아웃 와이드
 st.set_page_config(layout="wide", page_title="🔴 하이모바일 주식 대시보드", initial_sidebar_state="collapsed")
 
-# 📺 커스텀 CSS (여백 극강 축소 및 컬럼 밀착)
+# 📺 커스텀 CSS
 st.markdown("""
 <style>
-    /* 화면 상하좌우 여백 완전 제거 */
     .block-container { padding-top: 0.5rem !important; padding-bottom: 0rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; max-width: 100%; }
     #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
-    
-    /* 컬럼 간격 최소화 */
     [data-testid="column"] { padding-left: 0.2rem !important; padding-right: 0.2rem !important; }
     
-    /* 제목 텍스트 크기 축소 */
     .main-title { font-size: 1.2rem !important; font-weight: 900 !important; color: #FF4B4B !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); display: inline-block; vertical-align: middle; }
     .company-name { font-size: 0.8rem !important; color: #B0B0B0 !important; font-weight: 700 !important; margin-left: 8px; display: inline-block; vertical-align: middle; }
     
-    /* 데이터프레임 압축 */
     .stDataFrame { font-size: 0.95rem !important; }
     div[data-testid="stDataFrame"] table { font-size: 0.95rem !important; font-weight: 600 !important; padding: 0px !important;}
 </style>
 """, unsafe_allow_html=True)
 
-# 🏢 메인 타이틀 (아래 여백을 0으로 만들어 바로 밑의 전광판과 딱 붙임)
+# 🏢 메인 타이틀
 st.markdown("""
     <div style='margin-bottom: 2px;'>
         <span class='main-title'>🔴 [LIVE] 스캐너 24H</span>
@@ -76,9 +71,8 @@ def get_theme_icon(stock_name):
 def get_access_token():
     headers = {"content-type": "application/json"}
     body = {"grant_type": "client_credentials", "appkey": APP_KEY, "appsecret": APP_SECRET}
-    url = f"{URL_BASE}/oauth2/tokenP"
     try:
-        res = requests.post(url, headers=headers, data=json.dumps(body))
+        res = requests.post(f"{URL_BASE}/oauth2/tokenP", headers=headers, data=json.dumps(body))
         return res.json()["access_token"]
     except: return None
 
@@ -122,45 +116,58 @@ def get_foreign_investor_trend():
 
 @st.cache_data(ttl=60)
 def get_market_indices_v2():
-    end_date, start_date = datetime.now(KST).strftime('%Y-%m-%d'), (datetime.now(KST) - timedelta(days=20)).strftime('%Y-%m-%d')
+    end_date = datetime.now(KST).strftime('%Y-%m-%d')
+    start_date = (datetime.now(KST) - timedelta(days=20)).strftime('%Y-%m-%d')
     try: ks, kq = fdr.DataReader('KS11', start_date, end_date), fdr.DataReader('KQ11', start_date, end_date) 
     except: ks, kq = pd.DataFrame(), pd.DataFrame()
     try: usd = fdr.DataReader('USD/KRW', start_date, end_date)
     except: usd = pd.DataFrame()
     return ks, kq, usd
 
-# 📺 [초압축 동적 배경 전광판 HTML 렌더러]
+# 📺 [텍스트 강제 검정색 + 배경색 + NaN 방어 로직]
 def get_dynamic_metric_html(title, value_str, delta_str, status="up"):
+    # 글씨는 무조건 뚜렷한 검정색으로 고정
+    text_color = "#000000"
+    
     if status == "up":
-        bg_color = "rgba(255, 75, 75, 0.15)" # 붉은색 배경
+        bg_color = "#ffdddd" # 검정 글씨가 잘 보이도록 밝은 붉은색(파스텔톤) 배경
         border_color = "#FF4B4B"
-        text_color = "#FF4B4B"
     elif status == "down":
-        bg_color = "rgba(0, 104, 201, 0.15)" # 파란색 배경
+        bg_color = "#cce5ff" # 밝은 파란색(파스텔톤) 배경
         border_color = "#3b82f6"
-        text_color = "#3b82f6"
     else:
-        bg_color = "rgba(128, 128, 128, 0.1)" # 회색 배경 (보합)
-        border_color = "#555555"
-        text_color = "#AAAAAA"
+        bg_color = "#f0f0f0" # 밝은 회색 배경
+        border_color = "#888888"
         
     return f"""
     <div style="background-color: {bg_color}; border-left: 4px solid {border_color}; border-radius: 4px; padding: 5px; text-align: center; line-height: 1.1;">
-        <div style="font-size: 0.75rem; color: #DDDDDD; font-weight: bold;">{title}</div>
-        <div style="font-size: 1.2rem; color: {text_color}; font-weight: 900; margin: 2px 0;">{value_str}</div>
-        <div style="font-size: 0.75rem; color: {text_color}; font-weight: bold;">{delta_str}</div>
+        <div style="font-size: 0.8rem; color: {text_color}; font-weight: 800;">{title}</div>
+        <div style="font-size: 1.3rem; color: {text_color}; font-weight: 900; margin: 2px 0;">{value_str}</div>
+        <div style="font-size: 0.8rem; color: {text_color}; font-weight: 800;">{delta_str}</div>
     </div>
     """
 
 def display_index_metric_custom(df, title):
-    if df.empty:
+    if df.empty or 'Close' not in df.columns:
         st.markdown(get_dynamic_metric_html(title, "N/A", "데이터 없음", "flat"), unsafe_allow_html=True)
         return
-    current_val = df['Close'].iloc[-1]
-    prev_val = df['Close'].iloc[-2] if len(df) > 1 else current_val
+        
+    # 데이터에서 빈 값(NaN) 완전 제거하여 계산 오류 방어
+    df_clean = df['Close'].dropna()
+    if len(df_clean) == 0:
+        st.markdown(get_dynamic_metric_html(title, "N/A", "데이터 없음", "flat"), unsafe_allow_html=True)
+        return
+        
+    current_val = df_clean.iloc[-1]
+    prev_val = df_clean.iloc[-2] if len(df_clean) > 1 else current_val
+    
     delta = current_val - prev_val
     delta_percent = (delta / prev_val) * 100 if prev_val != 0 else 0
     
+    # 혹시 모를 추가 nan 발생 방어
+    if pd.isna(delta) or pd.isna(delta_percent):
+        delta, delta_percent = 0.0, 0.0
+        
     status = "up" if delta > 0 else "down" if delta < 0 else "flat"
     sign = "+" if delta > 0 else ""
     
@@ -205,7 +212,7 @@ def fetch_pre_market_data(top30_df):
     return df
 
 # -----------------------------------------------------------------------------
-# 🤖 오토 파일럿 백그라운드 작동 (100% 자동화, 스위치 UI 제거)
+# 🤖 오토 파일럿 백그라운드 작동
 # -----------------------------------------------------------------------------
 now_time = datetime.now(KST).time()
 time_pre_start, time_reg_start, time_after_start, time_after_end = dt_time(8, 30), dt_time(9, 0), dt_time(15, 30), dt_time(18, 0)
@@ -223,7 +230,6 @@ elif time_after_start <= now_time < time_after_end:
     pre_market_mode = False
     after_market_mode = True
 
-# ⏱️ 1분 갱신 기능 강제 실행 (백그라운드)
 try:
     from streamlit_autorefresh import st_autorefresh
     st_autorefresh(interval=60000, limit=10000, key="auto_scanner_refresh")
@@ -248,11 +254,10 @@ with c4:
     st.markdown(html_ff, unsafe_allow_html=True)
 with c5:
     score = min(100, max(0, int(50 + (ff_net / 10))))
-    status_score = "up" if score > 50 else "down" if score < 50 else "flat"
+    status_score = "up" if score >= 50 else "down"
     html_score = get_dynamic_metric_html("시장 매력도", f"{score} 점", "시장 탄력도", status_score)
     st.markdown(html_score, unsafe_allow_html=True)
 
-# 지수와 아래 테이블 사이의 간격을 띄우기 위한 얇은 여백
 st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
@@ -270,7 +275,6 @@ if not df_universe.empty:
     filtered_df['10분_상승예측(%)'] = ((filtered_df['등락률'] * 0.5) + np.log1p(filtered_df['거래대금'])).round(2)
     filtered_df['테마'] = filtered_df['종목명'].apply(get_theme_icon)
     
-    # 목표가, 손절가 계산 추가
     filtered_df['단기_목표가'] = (filtered_df['현재가'] * 1.03).astype(int)
     filtered_df['손절가'] = (filtered_df['현재가'] * 0.98).astype(int)
     
@@ -313,7 +317,6 @@ if not df_universe.empty:
         
     output_df = pd.DataFrame(output_dict).reset_index(drop=True)
     
-    # 💡 좌측 체크박스(인덱스) 완전 제거 설정 유지, 세로 공간 100% 활용
     st.dataframe(output_df, use_container_width=True, height=800, hide_index=True)
 else:
     st.error("데이터 로드 중입니다...")
