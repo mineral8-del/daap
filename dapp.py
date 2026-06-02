@@ -244,6 +244,10 @@ if not df_universe.empty:
     filtered_df['10분_상승예측(%)'] = ((filtered_df['등락률'] * 0.5) + np.log1p(filtered_df['거래대금'])).round(2)
     filtered_df['테마'] = filtered_df['종목명'].apply(get_theme_icon)
     
+    # 목표가, 손절가 계산 추가
+    filtered_df['단기_목표가'] = (filtered_df['현재가'] * 1.03).astype(int)
+    filtered_df['손절가'] = (filtered_df['현재가'] * 0.98).astype(int)
+    
     def detect_signal(row):
         if row['등락률'] >= 7.0 and row['거래대금'] > 50000: return "🔥 돌파매매"
         elif 1.0 <= row['등락률'] < 5.0 and row['거래대금'] > 20000: return "💧 눌림목"
@@ -259,13 +263,14 @@ if not df_universe.empty:
         extra_df = fetch_after_market_data(top_30)
         top_30 = pd.merge(top_30, extra_df, on='종목코드', how='left').sort_values(by='_sort_ratio_num', ascending=False)
 
+    # 💡 딕셔너리 키를 올려주신 사진과 100% 동일하게 구성합니다.
     output_dict = {
-        '섹터/테마': top_30['테마'], 
-        '매매상태': top_30['매매상태'], 
+        '테마': top_30['테마'], 
+        '실시간 상태': top_30['매매상태'], 
+        'AI 예측스코어': top_30['10분_상승예측(%)'].apply(lambda x: f"🚀 {x}점"),
         '종목명': top_30['종목명'],
-        '현재가 (원)': top_30['현재가'].apply(lambda x: f"{int(x):,} 원"),
-        '상승률 (%)': top_30['등락률'].apply(lambda x: f"{x:+.2f} %"),
-        '누적 거래대금 (백만원)': top_30['거래대금'].apply(lambda x: f"{int(x):,}")
+        '전일 종가(현재가)': top_30['현재가'].apply(lambda x: f"{int(x):,} 원"),
+        '전일 상승률': top_30['등락률'].apply(lambda x: f"{x:+.2f} %"),
     }
     
     if pre_market_mode:
@@ -274,10 +279,16 @@ if not df_universe.empty:
     elif after_market_mode:
         output_dict['🌙 시간외 등락률'] = top_30['시간외 등락률']
         output_dict['🌙 시간외 현재가'] = top_30['시간외 현재가']
+    else:
+        output_dict['단기 목표가(+3%)'] = top_30['단기_목표가'].apply(lambda x: f"{x:,} 원")
+        output_dict['손절가(-2%)'] = top_30['손절가'].apply(lambda x: f"{x:,} 원")
+        
+    output_dict['거래대금(백만)'] = top_30['거래대금'].apply(lambda x: f"{int(x):,}")
+    output_dict['종목코드'] = top_30['종목코드']
         
     output_df = pd.DataFrame(output_dict).reset_index(drop=True)
     
-    # 테이블이 빈 공간을 완벽히 메우도록 높이 설정
+    # 💡 좌측 체크박스를 완벽히 제거하기 위해 hide_index=True 적용
     st.dataframe(output_df, use_container_width=True, height=800, hide_index=True)
 else:
     st.error("데이터 로드 중입니다...")
