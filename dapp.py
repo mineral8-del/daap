@@ -28,7 +28,7 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 # 📺 [초압축 와이드 뷰] 레이아웃 설정
 st.set_page_config(layout="wide", page_title="🔴 하이모바일 주식 대시보드 LIVE", initial_sidebar_state="collapsed")
 
-# 📺 모바일 가로 송출 최적화 커스텀 CSS (폰트 대폭 확대 및 여백 파괴)
+# 📺 모바일 가로 송출 최적화 커스텀 CSS
 st.markdown("""
 <style>
     /* 여백 제로화 */
@@ -44,12 +44,7 @@ st.markdown("""
     #clockDisplay { font-size: 3.5rem !important; font-weight: 900 !important; color: #ffffff !important; background-color: #000000 !important; padding: 0px 20px; border-radius: 8px; display: inline-block; letter-spacing: 2px; box-shadow: 0px 0px 10px rgba(255,255,255,0.2); }
     
     /* 🎯 테이블 헤더 타이틀 크기 확대 */
-    .table-title { font-size: 1.5rem !important; font-weight: 900 !important; color: #FFD700 !important; margin-top: 5px; margin-bottom: 5px; }
-    
-    /* 📊 데이터프레임(표) 글씨 크기 초거대화 (모바일 가독성 끝판왕) */
-    .stDataFrame { font-size: 1.6rem !important; }
-    div[data-testid="stDataFrame"] table { font-size: 1.6rem !important; font-weight: 800 !important; }
-    div[data-testid="stDataFrame"] td, div[data-testid="stDataFrame"] th { padding: 12px 10px !important; }
+    .table-title { font-size: 1.5rem !important; font-weight: 900 !important; color: #FF4B4B !important; margin-top: 5px; margin-bottom: 5px; text-align: center; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -108,7 +103,7 @@ THEME_DICT = {
     "🔋 2차전지": ["에코프로", "에코프로비엠", "에코프로머티", "포스코홀딩스", "POSCO홀딩스", "LG에너지솔루션", "엘앤에프", "금양"],
     "🧬 바이오": ["알테오젠", "HLB", "삼성바이오로직스", "셀트리온", "삼천당제약", "리가켐바이오", "휴젤"],
     "⚡ 전력기기": ["HD현대일렉트릭", "LS일렉트릭", "효성중공업", "제룡전기", "일진전기"],
-    "💄 화장품": ["실리콘투", "브이티", "코스메카코리아", "씨앤씨인터내셔널", "아모레픽", "클리오"]
+    "💄 화장품": ["실리콘투", "브이티", "코스메카코리아", "씨앤씨인터내셔널", "아모레퍼시픽", "클리오"]
 }
 
 def get_theme_icon(stock_name):
@@ -181,10 +176,10 @@ def get_dynamic_metric_html(title, value_str, delta_str, status="up"):
     else: bg_color = "#f0f0f0"; border_color = "#888888"
         
     return f"""
-    <div style="background-color: {bg_color}; border-left: 5px solid {border_color}; border-radius: 4px; padding: 4px; text-align: center; line-height: 1.1;">
-        <div style="font-size: 0.8rem; color: {text_color}; font-weight: 800;">{title}</div>
-        <div style="font-size: 1.3rem; color: {text_color}; font-weight: 900; margin: 1px 0;">{value_str}</div>
-        <div style="font-size: 0.8rem; color: {text_color}; font-weight: 800;">{delta_str}</div>
+    <div style="background-color: {bg_color}; border-left: 5px solid {border_color}; border-radius: 4px; padding: 4px; text-align: center; line-height: 1.1; margin-bottom: 5px;">
+        <div style="font-size: 0.9rem; color: {text_color}; font-weight: 800;">{title}</div>
+        <div style="font-size: 1.4rem; color: {text_color}; font-weight: 900; margin: 1px 0;">{value_str}</div>
+        <div style="font-size: 0.9rem; color: {text_color}; font-weight: 800;">{delta_str}</div>
     </div>
     """
 
@@ -281,7 +276,7 @@ with c5:
 st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 📊 와이드 스캐너 테이블 (Top 10 압축 및 컬럼 간소화)
+# 📊 커스텀 HTML 전광판 테이블 (종목명 크기 극대화)
 # -----------------------------------------------------------------------------
 if pre_market_mode: st.markdown("<div class='table-title'>🎯 장전 갭상승 예상지표 Top 10</div>", unsafe_allow_html=True)
 elif after_market_mode: st.markdown("<div class='table-title'>🌙 시간외 단일가 수급지표 Top 10</div>", unsafe_allow_html=True)
@@ -291,7 +286,7 @@ df_universe = get_kis_top_trading_value_stocks()
 
 if not df_universe.empty:
     filtered_df = df_universe[df_universe['등락률'] > -2.0].copy()
-    X_live = filtered_df[['등ral률', '거래대금', '현재가']] = filtered_df[['등락률', '거래대금', '현재가']].fillna(0)
+    X_live = filtered_df[['등락률', '거래대금', '현재가']].fillna(0)
     filtered_df['10분_상승예측(%)'] = ((filtered_df['등락률'] * 0.5) + np.log1p(filtered_df['거래대금'])).round(2)
     filtered_df['테마'] = filtered_df['종목명'].apply(get_theme_icon)
     
@@ -301,7 +296,6 @@ if not df_universe.empty:
         return "▪️ 관망"
     filtered_df['매매상태'] = filtered_df.apply(detect_signal, axis=1)
     
-    # 💡 10개만 정확히 끊어서 연산량 축소 및 화면 최적화
     top_10 = filtered_df.sort_values(by='10분_상승예측(%)', ascending=False).head(10)
     
     if pre_market_mode:
@@ -311,30 +305,51 @@ if not df_universe.empty:
         extra_df = fetch_after_market_data(top_10)
         top_10 = pd.merge(top_10, extra_df, on='종목코드', how='left').sort_values(by='_sort_ratio_num', ascending=False)
 
-    # 💡 요구사항 반영: 단기목표가, 손절가, 종목코드 완전 배제
+    # 출력용 딕셔너리 생성 ('순위' 컬럼 명시적 추가)
     output_dict = {
+        '순위': [f"{i}위" for i in range(1, len(top_10) + 1)],
         '테마': top_10['테마'], 
-        '실시간 상태': top_10['매매상태'], 
-        'AI 예측스코어': top_10['10분_상승예측(%)'].apply(lambda x: f"🚀 {x}점"),
+        '상태': top_10['매매상태'], 
+        'AI 스코어': top_10['10분_상승예측(%)'].apply(lambda x: f"🚀 {x}점"),
         '종목명': top_10['종목명'],
-        '전일 종가(현재가)': top_10['현재가'].apply(lambda x: f"{int(x):,} 원"),
-        '전일 상승률': top_10['등락률'].apply(lambda x: f"{x:+.2f} %"),
+        '현재가': top_10['현재가'].apply(lambda x: f"{int(x):,} 원"),
+        '상승률': top_10['등락률'].apply(lambda x: f"{x:+.2f} %"),
     }
     
     if pre_market_mode:
-        output_dict['☀️ 예상 갭상승률'] = top_10['☀️ 갭상승률']
-        output_dict['☀️ 예상 체결가'] = top_10['☀️ 예상 체결가']
+        output_dict['☀️ 갭상승률'] = top_10['☀️ 갭상승률']
+        output_dict['☀️ 체결가'] = top_10['☀️ 예상 체결가']
     elif after_market_mode:
-        output_dict['🌙 시간외 등락률'] = top_10['시간외 등락률']
-        output_dict['🌙 시간외 현재가'] = top_10['시간외 현재가']
+        output_dict['🌙 시간외 등락'] = top_10['시간외 등락률']
+        output_dict['🌙 시간외 가'] = top_10['시간외 현재가']
         
     output_dict['거래대금(백만)'] = top_10['거래대금'].apply(lambda x: f"{int(x):,}")
     output_df = pd.DataFrame(output_dict).reset_index(drop=True)
     
-    # 순위 가독성을 위해 인덱스 1부터 시작하도록 세팅
-    output_df.index = output_df.index + 1
+    # 💡 HTML 테이블 커스텀 렌더링 시작
+    html_table = "<table style='width: 100%; border-collapse: collapse; text-align: center; background-color: #ffffff;'>"
     
-    # 폰트가 아주 큰 상태이므로 표 높이는 500 내외로 콤팩트하게 고정해 한 화면에 들어오게 조절
-    st.dataframe(output_df, use_container_width=True, height=480)
+    # 헤더 생성
+    html_table += "<thead><tr style='background-color: #f2f2f2; border-bottom: 3px solid #000000;'>"
+    for col in output_df.columns:
+        html_table += f"<th style='padding: 10px; font-size: 1.1rem; font-weight: 800; color: #000000;'>{col}</th>"
+    html_table += "</tr></thead><tbody>"
+    
+    # 데이터 열 생성 (종목명 글씨만 2.2rem으로 대폭 확대!)
+    for _, row in output_df.iterrows():
+        html_table += "<tr style='border-bottom: 1px solid #dddddd;'>"
+        for col in output_df.columns:
+            if col == '종목명':
+                # 종목명: 크기 2.2rem, 가장 두꺼운 폰트(900), 완전한 검정색
+                html_table += f"<td style='padding: 12px 10px; font-size: 2.2rem; font-weight: 900; color: #000000; letter-spacing: -1px;'>{row[col]}</td>"
+            else:
+                # 나머지 정보: 크기 1.3rem, 진한 회색/검정색
+                html_table += f"<td style='padding: 12px 10px; font-size: 1.3rem; font-weight: 700; color: #333333;'>{row[col]}</td>"
+        html_table += "</tr>"
+    html_table += "</tbody></table>"
+    
+    # 화면에 HTML 렌더링
+    st.markdown(html_table, unsafe_allow_html=True)
+    
 else:
     st.error("데이터 로드 중입니다...")
