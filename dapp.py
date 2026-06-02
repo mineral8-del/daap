@@ -183,15 +183,29 @@ def fetch_pre_market_data(top30_df):
     return df
 
 # -----------------------------------------------------------------------------
-# 🤖 오토 파일럿 시간 판별 로직
+# 🤖 오토 파일럿 백그라운드 작동 (100% 자동화, 스위치 UI 제거)
 # -----------------------------------------------------------------------------
 now_time = datetime.now(KST).time()
 time_pre_start, time_reg_start, time_after_start, time_after_end = dt_time(8, 30), dt_time(9, 0), dt_time(15, 30), dt_time(18, 0)
-default_auto, default_pre, default_after = False, False, True
 
-if time_pre_start <= now_time < time_reg_start: default_auto, default_pre, default_after = True, True, False
-elif time_reg_start <= now_time < time_after_start: default_auto, default_pre, default_after = True, False, False
-elif time_after_start <= now_time < time_after_end: default_auto, default_pre, default_after = True, False, True
+pre_market_mode = False
+after_market_mode = True # 기본값은 장 마감 상태
+
+if time_pre_start <= now_time < time_reg_start:
+    pre_market_mode = True
+    after_market_mode = False
+elif time_reg_start <= now_time < time_after_start:
+    pre_market_mode = False
+    after_market_mode = False
+elif time_after_start <= now_time < time_after_end:
+    pre_market_mode = False
+    after_market_mode = True
+
+# ⏱️ 1분 갱신 기능 강제 실행 (백그라운드)
+try:
+    from streamlit_autorefresh import st_autorefresh
+    st_autorefresh(interval=60000, limit=10000, key="auto_scanner_refresh")
+except ImportError: pass
 
 # -----------------------------------------------------------------------------
 # [상단 1열] 텍스트 전광판 (지수 3개 + 수급 2개 = 5분할)
@@ -213,21 +227,7 @@ with c5:
     score = min(100, max(0, int(50 + (ff_net / 10))))
     st.metric("시장 매력도", f"{score} 점", "탄력도", delta_color="normal" if ff_net > 0 else "inverse" if ff_net < 0 else "off")
 
-# -----------------------------------------------------------------------------
-# [상단 2열] 스위치 컨트롤 및 제목
-# -----------------------------------------------------------------------------
 st.markdown("<hr style='margin-top: 10px; margin-bottom: 10px;'>", unsafe_allow_html=True)
-
-sc1, sc2, sc3, _ = st.columns([1.5, 1.5, 1.5, 5.5])
-with sc1: auto_refresh = st.toggle("⏱️ 1분 갱신", value=default_auto)
-with sc2: pre_market_mode = st.toggle("☀️ 동시호가 모드", value=default_pre)
-with sc3: after_market_mode = st.toggle("🌙 시간외 모드", value=default_after)
-
-if auto_refresh:
-    try:
-        from streamlit_autorefresh import st_autorefresh
-        st_autorefresh(interval=60000, limit=10000, key="auto_scanner_refresh")
-    except ImportError: pass
 
 # -----------------------------------------------------------------------------
 # 📊 와이드 스캐너 테이블 (화면 꽉 채우기)
