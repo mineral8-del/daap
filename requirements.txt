@@ -1,11 +1,7 @@
-lxml
 streamlit
 pandas
 numpy
-plotly
 requests
 finance-datareader
-streamlit-autorefresh
-beautifulsoup4
 joblib
-scikit-learn
+python-dotenv
