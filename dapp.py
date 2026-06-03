@@ -9,18 +9,18 @@ import FinanceDataReader as fdr
 import io
 import joblib
 import os
+from dotenv import load_dotenv
 
 # -----------------------------------------------------------------------------
-# [설정] 한국투자증권 API KEY
+# [설정] 한국투자증권 API KEY (.env 파일 연동)
 # -----------------------------------------------------------------------------
-try:
-    KIS_APP_KEY = st.secrets["KIS_APP_KEY"]
-    KIS_APP_SECRET = st.secrets["KIS_APP_SECRET"]
-    
-    APP_KEY = KIS_APP_KEY
-    APP_SECRET = KIS_APP_SECRET
-except KeyError:
-    st.error("⚠️ Streamlit secrets에 'KIS_APP_KEY' 또는 'KIS_APP_SECRET'이 설정되지 않았습니다.")
+load_dotenv() 
+
+APP_KEY = os.environ.get("APP_KEY") or os.environ.get("KIS_APP_KEY")
+APP_SECRET = os.environ.get("APP_SECRET") or os.environ.get("KIS_APP_SECRET")
+
+if not APP_KEY or not APP_SECRET:
+    st.error("⚠️ 서버의 '.env' 파일에 앱키(APP_KEY) 또는 시크릿키(APP_SECRET)가 설정되지 않았습니다.")
     st.stop()
 
 URL_BASE = "https://openapi.koreainvestment.com:9443" 
@@ -28,13 +28,13 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 # 📺 [초압축 와이드 뷰] 레이아웃 설정
 st.set_page_config(layout="wide", page_title="🔴 하이모바일 주식 대시보드 LIVE", initial_sidebar_state="collapsed")
 
-# 📺 1080p FHD 해상도 한 화면 완벽 압축 맞춤형 CSS
+# 📺 1080p FHD 해상도 한 화면 완벽 압축 + 폰트 밸런스 조정 CSS
 st.markdown("""
 <style>
-    /* 상하좌우 여백 최적화 (위아래 남는 빈 공간 강제 제거) */
+    /* 상하좌우 여백 최적화 */
     .block-container { padding-top: 0.5rem !important; padding-bottom: 0rem !important; padding-left: 1rem !important; padding-right: 1rem !important; max-width: 100%; }
     
-    /* 불필요한 스트림릿 기본 메뉴, 헤더, 푸터 완전 삭제 */
+    /* 불필요한 스트림릿 기본 메뉴 삭제 */
     header[data-testid="stHeader"] { display: none !important; }
     #MainMenu {visibility: hidden;} 
     footer {visibility: hidden;} 
@@ -51,22 +51,22 @@ st.markdown("""
     /* 🎯 테이블 헤더 타이틀 */
     .table-title { font-size: 1.4rem !important; font-weight: 900 !important; color: #FF4B4B !important; margin-top: 5px; margin-bottom: 5px; text-align: center; }
     
-    /* ✨ 테이블 세로 찌그러짐 해결을 위한 다이어트 패딩 */
+    /* ✨ 테이블 디자인 */
     .custom-stock-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: center; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     .custom-stock-table thead tr { background-color: #1e293b; color: #ffffff; }
     
-    /* 💡 패딩을 약간 줄여서 10위 종목 + 하단 가이드가 한 화면에 쏙 들어가게 조절! */
-    .custom-stock-table th { padding: 8px 5px; font-size: 1.1rem; font-weight: 800; }
+    /* 💡 테이블 제목(헤더) 폰트 확대 (1.1 -> 1.2) */
+    .custom-stock-table th { padding: 8px 5px; font-size: 1.2rem; font-weight: 800; }
     .custom-stock-table td { padding: 8px 5px; border-bottom: 1px solid #e2e8f0; line-height: 1.2; }
     .custom-stock-table tbody tr:nth-of-type(even) { background-color: #f8fafc; } 
     
-    /* 폰트 크기 시원하게 유지 */
-    .stock-name-cell { font-size: 2rem; font-weight: 900; color: #0f172a; letter-spacing: -1.5px; } 
+    /* 💡 종목명 크기 약간 축소 (2.0 -> 1.7) */
+    .stock-name-cell { font-size: 1.7rem; font-weight: 900; color: #0f172a; letter-spacing: -1px; } 
     .up-color { color: #ef4444 !important; } 
     .down-color { color: #3b82f6 !important; } 
     .flat-color { color: #64748b !important; } 
 
-    /* 🚀 흐르는 시세 전광판 (위아래 두께 다이어트) */
+    /* 🚀 흐르는 시세 전광판 */
     .marquee-container { width: 100%; overflow: hidden; background-color: #0f172a; color: white; padding: 8px 0; border-radius: 6px; margin-bottom: 6px; white-space: nowrap; position: relative;}
     .marquee-content { display: inline-block; animation: scroll-left 40s linear infinite; font-size: 1.2rem; font-weight: 800; }
     @keyframes scroll-left { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
@@ -140,8 +140,8 @@ THEME_DICT = {
     "💾 반도체": ["한미반도체", "SK하이닉스", "삼성전자", "HPSP", "이수페타시스", "제우스", "가온칩스", "리노공업", "디아이"],
     "🔋 2차전지": ["에코프로", "에코프로비엠", "에코프로머티", "포스코홀딩스", "POSCO홀딩스", "LG에너지솔루션", "엘앤에프", "금양"],
     "🧬 바이오": ["알테오젠", "HLB", "삼성바이오로직스", "셀트리온", "삼천당제약", "리가켐바이오", "휴젤"],
-    "⚡ 전력기기": ["HD현대일렉트릭", "LS일렉트릭", "효성중공업", "제룡전기", "일진전기"],
-    "💄 화장품": ["실리콘투", "브이티", "코스메카코리아", "씨앤씨인터내셔널", "아모레퍼시픽", "클리오"]
+    "⚡ 전력기기": ["HD현대일렉트릭", "LS일렉트릭", "효성중공업", "제룡전기", "일진전기", "LS", "HD현대"],
+    "💄 화장품": ["실리콘투", "브이티", "코스메카코리아", "씨앤씨인터내셔널", "아모레퍼시픽", "클리오", "토니모리"]
 }
 
 def get_theme_icon(stock_name):
@@ -403,11 +403,13 @@ if not top_10.empty:
                 if '+' in str(row[rate_col]): color_cls = 'up-color'
                 elif '-' in str(row[rate_col]): color_cls = 'down-color'
 
+            # 💡 [핵심] 여기서 각 항목별 폰트 크기를 황금 밸런스로 일괄 조정했습니다!
             if col == '종목명': style = "class='stock-name-cell'"
-            elif col in ['현재가', '상승률', '☀️ 갭상승률', '☀️ 체결가', '🌙 시간외 등락', '🌙 시간외 가']: style = f"class='{color_cls}' style='font-size: 1.25rem; font-weight: 800;'"
-            elif col == '순위': style = "style='font-size: 1.1rem; font-weight: 900; color: #555;'"
-            elif col == 'AI 스코어': style = "style='font-size: 1.1rem; font-weight: bold; color: #d97706;'"
-            else: style = "style='font-size: 1.05rem; font-weight: 700; color: #444;'"
+            elif col in ['현재가', '상승률', '☀️ 갭상승률', '☀️ 체결가', '🌙 시간외 등락', '🌙 시간외 가']: 
+                style = f"class='{color_cls}' style='font-size: 1.4rem; font-weight: 900;'"
+            elif col == '순위': style = "style='font-size: 1.3rem; font-weight: 900; color: #555;'"
+            elif col == 'AI 스코어': style = "style='font-size: 1.3rem; font-weight: 900; color: #d97706;'"
+            else: style = "style='font-size: 1.25rem; font-weight: 800; color: #444;'"
             
             html_table += f"<td {style}>{val}</td>"
         html_table += "</tr>"
@@ -418,7 +420,7 @@ else:
     st.error("데이터를 수집 중입니다. 장 시작 전이거나 네트워크 상태를 확인해주세요.")
 
 # -----------------------------------------------------------------------------
-# 💡 [신규] 하단 화면 채우기용 - 시청자 가이드 HUD 패널
+# 💡 하단 화면 채우기용 - 시청자 가이드 HUD 패널
 # -----------------------------------------------------------------------------
 st.markdown("""
 <div class="guide-panel">
