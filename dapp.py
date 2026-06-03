@@ -7,7 +7,6 @@ import time
 from datetime import datetime, timedelta, timezone, time as dt_time
 import FinanceDataReader as fdr
 import io
-import joblib
 import os
 from dotenv import load_dotenv
 
@@ -32,7 +31,7 @@ st.set_page_config(layout="wide", page_title="🔴 하이모바일 주식 대시
 st.markdown("""
 <style>
     /* 상하좌우 여백 최적화 */
-    .block-container { padding-top: 0.5rem !important; padding-bottom: 0rem !important; padding-left: 1rem !important; padding-right: 1rem !important; max-width: 100%; }
+    .block-container { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; padding-left: 1rem !important; padding-right: 1rem !important; max-width: 100%; }
     
     /* 불필요한 스트림릿 기본 메뉴 삭제 */
     header[data-testid="stHeader"] { display: none !important; }
@@ -42,11 +41,7 @@ st.markdown("""
     [data-testid="column"] { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
     
     /* 🏢 회사명 */
-    .company-sub { font-size: 1rem !important; color: #888888 !important; font-weight: 700; text-align: left; margin-bottom: -15px; }
-    
-    /* 🕒 디지털 시계 */
-    .center-clock-container { text-align: center; margin-top: -15px; margin-bottom: 5px; }
-    #clockDisplay { font-size: 1.6rem !important; font-weight: 900 !important; color: #ffffff !important; background-color: #111111 !important; padding: 4px 15px; border-radius: 8px; letter-spacing: 2px; }
+    .company-sub { font-size: 1rem !important; color: #888888 !important; font-weight: 700; text-align: left; margin-bottom: 5px; }
     
     /* 🎯 테이블 헤더 타이틀 */
     .table-title { font-size: 1.4rem !important; font-weight: 900 !important; color: #FF4B4B !important; margin-top: 5px; margin-bottom: 5px; text-align: center; }
@@ -55,12 +50,11 @@ st.markdown("""
     .custom-stock-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: center; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     .custom-stock-table thead tr { background-color: #1e293b; color: #ffffff; }
     
-    /* 💡 테이블 제목(헤더) 폰트 확대 (1.1 -> 1.2) */
     .custom-stock-table th { padding: 8px 5px; font-size: 1.2rem; font-weight: 800; }
     .custom-stock-table td { padding: 8px 5px; border-bottom: 1px solid #e2e8f0; line-height: 1.2; }
     .custom-stock-table tbody tr:nth-of-type(even) { background-color: #f8fafc; } 
     
-    /* 💡 종목명 크기 약간 축소 (2.0 -> 1.7) */
+    /* 💡 종목명 크기 */
     .stock-name-cell { font-size: 1.7rem; font-weight: 900; color: #0f172a; letter-spacing: -1px; } 
     .up-color { color: #ef4444 !important; } 
     .down-color { color: #3b82f6 !important; } 
@@ -84,54 +78,15 @@ st.markdown("""
     .guide-box { width: 48%; }
     .guide-title { font-size: 1.1rem; font-weight: 900; margin-bottom: 5px; }
     .guide-list { margin: 0; padding-left: 20px; line-height: 1.4; font-weight: 700; }
+
+    /* 🕒 하단 디지털 시계 */
+    .bottom-clock-container { text-align: center; margin-top: 15px; margin-bottom: 10px; }
+    #clockDisplay { font-size: 1.6rem !important; font-weight: 900 !important; color: #ffffff !important; background-color: #111111 !important; padding: 4px 15px; border-radius: 8px; letter-spacing: 2px; display: inline-block; }
 </style>
 """, unsafe_allow_html=True)
 
 # 🏢 상단 한구석 회사명 표시
 st.markdown("<div class='company-sub'>주식회사 하이모바일 LIVE</div>", unsafe_allow_html=True)
-
-# 🕒 정중앙 배치 날짜+디지털 시계
-st.markdown("""
-    <div class='center-clock-container'>
-        <div id="clockDisplay">0000-00-00 00:00:00</div>
-    </div>
-    <script>
-        function updateClock() {
-            var now = new Date();
-            var year = now.getFullYear();
-            var month = (now.getMonth() + 1).toString().padStart(2, '0');
-            var date = now.getDate().toString().padStart(2, '0');
-            var hours = now.getHours().toString().padStart(2, '0');
-            var minutes = now.getMinutes().toString().padStart(2, '0');
-            var seconds = now.getSeconds().toString().padStart(2, '0');
-            var timeString = year + '-' + month + '-' + date + ' ' + hours + ':' + minutes + ':' + seconds;
-            var clockElement = document.getElementById('clockDisplay');
-            if (clockElement) clockElement.innerText = timeString;
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
-    </script>
-""", unsafe_allow_html=True)
-
-import streamlit.components.v1 as components
-components.html("""
-    <script>
-        function updateClock() {
-            var now = new Date();
-            var year = now.getFullYear();
-            var month = (now.getMonth() + 1).toString().padStart(2, '0');
-            var date = now.getDate().toString().padStart(2, '0');
-            var hours = now.getHours().toString().padStart(2, '0');
-            var minutes = now.getMinutes().toString().padStart(2, '0');
-            var seconds = now.getSeconds().toString().padStart(2, '0');
-            var timeString = year + '-' + month + '-' + date + ' ' + hours + ':' + minutes + ':' + seconds;
-            var clockElements = window.parent.document.querySelectorAll('#clockDisplay');
-            clockElements.forEach(function(el) { el.innerText = timeString; });
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
-    </script>
-""", height=0, width=0)
 
 KST = timezone(timedelta(hours=9))
 
@@ -348,6 +303,7 @@ st.markdown(f"""
     </script>
 """, unsafe_allow_html=True)
 
+import streamlit.components.v1 as components
 components.html("""
     <script>
         var startTime = Date.now();
@@ -362,7 +318,7 @@ components.html("""
 """, height=0, width=0)
 
 # -----------------------------------------------------------------------------
-# 📊 커스텀 HTML 전광판 테이블 (본문)
+# 📊 커스텀 HTML 전광판 테이블 (본문 - 순위, 테마, 거래대금 제거)
 # -----------------------------------------------------------------------------
 if pre_mode: st.markdown("<div class='table-title'>🎯 장전 갭상승 예상지표 Top 10</div>", unsafe_allow_html=True)
 elif after_mode: st.markdown("<div class='table-title'>🌙 시간외 단일가 수급지표 Top 10</div>", unsafe_allow_html=True)
@@ -370,20 +326,21 @@ else: st.markdown("<div class='table-title'>📈 실시간 AI 주도성 랭킹 T
 
 if not top_10.empty:
     output_dict = {
-        '순위': [f"{i}위" for i in range(1, len(top_10) + 1)],
-        '테마': top_10['테마'].values, '상태': top_10['매매상태'].values,
+        '상태': top_10['매매상태'].values,
         'AI 스코어': [f"🚀 {x}점" for x in top_10['10분_상승예측(%)']],
         '종목명': top_10['종목명'].values,
         '현재가': [f"{int(x):,} 원" for x in top_10['현재가']],
         '상승률': [f"{x:+.2f} %" for x in top_10['등락률']],
     }
     
+    # 장전 / 시간외 모드일 때 추가 열 구성
     if pre_mode and '☀️ 갭상승률' in top_10.columns:
-        output_dict['☀️ 갭상승률'], output_dict['☀️ 체결가'] = top_10['☀️ 갭상승률'].values, top_10['☀️ 예상 체결가'].values
+        output_dict['☀️ 갭상승률'] = top_10['☀️ 갭상승률'].values
+        output_dict['☀️ 체결가'] = top_10['☀️ 예상 체결가'].values
     elif after_mode and '시간외 등락률' in top_10.columns:
-        output_dict['🌙 시간외 등락'], output_dict['🌙 시간외 가'] = top_10['시간외 등락률'].values, top_10['시간외 현재가'].values
+        output_dict['🌙 시간외 등락'] = top_10['시간외 등락률'].values
+        output_dict['🌙 시간외 가'] = top_10['시간외 현재가'].values
         
-    output_dict['거래대금(백만)'] = [f"{int(x):,}" for x in top_10['거래대금']]
     output_df = pd.DataFrame(output_dict)
     
     html_table = "<table class='custom-stock-table'><thead><tr>"
@@ -403,11 +360,9 @@ if not top_10.empty:
                 if '+' in str(row[rate_col]): color_cls = 'up-color'
                 elif '-' in str(row[rate_col]): color_cls = 'down-color'
 
-            # 💡 [핵심] 여기서 각 항목별 폰트 크기를 황금 밸런스로 일괄 조정했습니다!
             if col == '종목명': style = "class='stock-name-cell'"
             elif col in ['현재가', '상승률', '☀️ 갭상승률', '☀️ 체결가', '🌙 시간외 등락', '🌙 시간외 가']: 
                 style = f"class='{color_cls}' style='font-size: 1.4rem; font-weight: 900;'"
-            elif col == '순위': style = "style='font-size: 1.3rem; font-weight: 900; color: #555;'"
             elif col == 'AI 스코어': style = "style='font-size: 1.3rem; font-weight: 900; color: #d97706;'"
             else: style = "style='font-size: 1.25rem; font-weight: 800; color: #444;'"
             
@@ -442,3 +397,54 @@ st.markdown("""
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+# -----------------------------------------------------------------------------
+# 🕒 화면 맨 하단에 배치된 디지털 시계
+# -----------------------------------------------------------------------------
+st.markdown("""
+    <div class='bottom-clock-container'>
+        <div id="clockDisplay">0000-00-00 00:00:00</div>
+    </div>
+    <script>
+        function updateClock() {
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = (now.getMonth() + 1).toString().padStart(2, '0');
+            var date = now.getDate().toString().padStart(2, '0');
+            var hours = now.getHours().toString().padStart(2, '0');
+            var minutes = now.getMinutes().toString().padStart(2, '0');
+            var seconds = now.getSeconds().toString().padStart(2, '0');
+            var timeString = year + '-' + month + '-' + date + ' ' + hours + ':' + minutes + ':' + seconds;
+            
+            // 메인 DOM 및 iframe 부모 DOM 모두 업데이트
+            var clockElement = document.getElementById('clockDisplay');
+            if (clockElement) clockElement.innerText = timeString;
+            
+            try {
+                var clockElements = window.parent.document.querySelectorAll('#clockDisplay');
+                clockElements.forEach(function(el) { el.innerText = timeString; });
+            } catch(e) {}
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+""", unsafe_allow_html=True)
+
+components.html("""
+    <script>
+        function updateClock() {
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = (now.getMonth() + 1).toString().padStart(2, '0');
+            var date = now.getDate().toString().padStart(2, '0');
+            var hours = now.getHours().toString().padStart(2, '0');
+            var minutes = now.getMinutes().toString().padStart(2, '0');
+            var seconds = now.getSeconds().toString().padStart(2, '0');
+            var timeString = year + '-' + month + '-' + date + ' ' + hours + ':' + minutes + ':' + seconds;
+            var clockElements = window.parent.document.querySelectorAll('#clockDisplay');
+            clockElements.forEach(function(el) { el.innerText = timeString; });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+""", height=0, width=0)
