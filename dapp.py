@@ -38,14 +38,6 @@ st.markdown("""
     #MainMenu {visibility: hidden;} 
     footer {visibility: hidden;} 
     
-    [data-testid="column"] { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
-    
-    /* 🏢 회사명 */
-    .company-sub { font-size: 1rem !important; color: #888888 !important; font-weight: 700; text-align: left; margin-bottom: 5px; }
-    
-    /* 🎯 테이블 헤더 타이틀 */
-    .table-title { font-size: 1.4rem !important; font-weight: 900 !important; color: #FF4B4B !important; margin-top: 5px; margin-bottom: 5px; text-align: center; }
-    
     /* ✨ 테이블 디자인 */
     .custom-stock-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: center; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     .custom-stock-table thead tr { background-color: #1e293b; color: #ffffff; }
@@ -84,9 +76,6 @@ st.markdown("""
     #clockDisplay { font-size: 1.6rem !important; font-weight: 900 !important; color: #ffffff !important; background-color: #111111 !important; padding: 4px 15px; border-radius: 8px; letter-spacing: 2px; display: inline-block; }
 </style>
 """, unsafe_allow_html=True)
-
-# 🏢 상단 한구석 회사명 표시
-st.markdown("<div class='company-sub'>주식회사 하이모바일 LIVE</div>", unsafe_allow_html=True)
 
 KST = timezone(timedelta(hours=9))
 
@@ -135,58 +124,6 @@ def get_kis_top_trading_value_stocks():
     df = df[~df['종목명'].str.contains('|'.join(['KODEX', 'TIGER', 'KBSTAR', 'ACE', 'ARIRANG', 'HANARO', 'KOSEF', 'SOL', 'TIMEFOLIO', 'WOORI', '히어로즈', '마이티', '스팩', 'ETN']), case=False, regex=True)]
     df['현재가'], df['등락률'], df['거래대금'] = pd.to_numeric(df['현재가'], errors='coerce'), pd.to_numeric(df['등락률'], errors='coerce'), pd.to_numeric(df['거래대금'], errors='coerce') / 1000000 
     return df.sort_values(by='거래대금', ascending=False).drop_duplicates(subset=['종목코드']).dropna()
-
-@st.cache_data(ttl=15)
-def get_foreign_investor_trend():
-    session, token = requests.Session(), get_access_token()
-    if not token: return 0.0
-    try:
-        res = session.get("https://openapivts.koreainvestment.com:29443/uapi/domestic-future/v1/quotation/inquire-investor-trend", headers={"content-type": "application/json", "authorization": f"Bearer {token}", "appkey": APP_KEY, "appsecret": APP_SECRET, "tr_id": "FHUFT01010000"}, params={"FID_COND_MRKT_DIV_CODE": "F", "FID_INPUT_ISCD": "000"}, timeout=4)
-        if res.status_code == 200:
-            for data in res.json().get("output1", []):
-                if "외국인" in data.get("invst_vo", ""):
-                    val = float(data.get("ntby_pamt", 0)) / 100000000
-                    if val != 0.0: return round(val, 1)
-    except: pass
-    return 0.0
-
-@st.cache_data(ttl=60)
-def get_market_indices_v2():
-    end_date, start_date = datetime.now(KST).strftime('%Y-%m-%d'), (datetime.now(KST) - timedelta(days=20)).strftime('%Y-%m-%d')
-    try: ks, kq = fdr.DataReader('KS11', start_date, end_date), fdr.DataReader('KQ11', start_date, end_date) 
-    except: ks, kq = pd.DataFrame(), pd.DataFrame()
-    try: usd = fdr.DataReader('USD/KRW', start_date, end_date)
-    except: usd = pd.DataFrame()
-    return ks, kq, usd
-
-def get_dynamic_metric_html(title, value_str, delta_str, status="up"):
-    text_color = "#000000"
-    if status == "up": bg_color = "#ffdddd"; border_color = "#FF4B4B"
-    elif status == "down": bg_color = "#cce5ff"; border_color = "#3b82f6"
-    else: bg_color = "#f0f0f0"; border_color = "#888888"
-        
-    return f"""
-    <div style="background-color: {bg_color}; border-left: 5px solid {border_color}; border-radius: 4px; padding: 1px 3px; text-align: center; line-height: 1.05; margin-bottom: 1px;">
-        <div style="font-size: 0.75rem; color: {text_color}; font-weight: 800;">{title}</div>
-        <div style="font-size: 1.1rem; color: {text_color}; font-weight: 900; margin: 0px 0;">{value_str}</div>
-        <div style="font-size: 0.75rem; color: {text_color}; font-weight: 800;">{delta_str}</div>
-    </div>
-    """
-
-def display_index_metric_custom(df, title):
-    if df.empty or 'Close' not in df.columns:
-        st.markdown(get_dynamic_metric_html(title, "N/A", "데이터 없음", "flat"), unsafe_allow_html=True); return
-    df_clean = df['Close'].dropna()
-    if len(df_clean) == 0:
-        st.markdown(get_dynamic_metric_html(title, "N/A", "데이터 없음", "flat"), unsafe_allow_html=True); return
-    current_val = df_clean.iloc[-1]
-    prev_val = df_clean.iloc[-2] if len(df_clean) > 1 else current_val
-    delta = current_val - prev_val
-    delta_percent = (delta / prev_val) * 100 if prev_val != 0 else 0
-    if np.isnan(delta) or np.isnan(delta_percent): delta, delta_percent = 0.0, 0.0
-    status = "up" if delta > 0 else "down" if delta < 0 else "flat"
-    sign = "+" if delta > 0 else ""
-    st.markdown(get_dynamic_metric_html(title, f"{current_val:,.2f}", f"{sign}{delta:,.2f} ({sign}{delta_percent:.2f}%)", status), unsafe_allow_html=True)
 
 @st.cache_data(ttl=60, show_spinner=False)
 def fetch_after_market_data(top10_df):
@@ -261,26 +198,7 @@ if not df_universe.empty:
     ticker_html_str = "&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;".join(ticker_items * 3)
 
 # -----------------------------------------------------------------------------
-# [상단 1열] 지수 & 외인 전광판
-# -----------------------------------------------------------------------------
-ks_df, kq_df, usd_df = get_market_indices_v2()
-if 'foreign_futures_net' not in st.session_state: st.session_state.foreign_futures_net = get_foreign_investor_trend()
-ff_net = st.session_state.foreign_futures_net
-
-c1, c2, c3, c4, c5 = st.columns(5)
-with c1: display_index_metric_custom(ks_df, "KOSPI")
-with c2: display_index_metric_custom(kq_df, "KOSDAQ")
-with c3: display_index_metric_custom(usd_df, "USD/KRW")
-with c4:
-    status = "up" if ff_net > 0 else "down" if ff_net < 0 else "flat"
-    sign = "+" if ff_net > 0 else ""
-    st.markdown(get_dynamic_metric_html("외인 선물 순매수", f"{sign}{ff_net:,} 억", "매수 우위" if ff_net > 0 else "매도 우위" if ff_net < 0 else "대기 중", status), unsafe_allow_html=True)
-with c5:
-    score = min(100, max(0, int(50 + (ff_net / 10))))
-    st.markdown(get_dynamic_metric_html("시장 매력도", f"{score} 점", "시장 탄력도", "up" if score >= 50 else "down"), unsafe_allow_html=True)
-
-# -----------------------------------------------------------------------------
-# 🚀 역동적 애니메이션 (시세 흐름 띠 + 타이머 게이지)
+# 🚀 역동적 애니메이션 (시세 흐름 띠 + 타이머 게이지) - 화면 최상단 배치
 # -----------------------------------------------------------------------------
 st.markdown(f"""
     <div class="marquee-container">
@@ -318,7 +236,7 @@ components.html("""
 """, height=0, width=0)
 
 # -----------------------------------------------------------------------------
-# 📊 커스텀 HTML 전광판 테이블 (본문 - 순위, 테마, 거래대금 제거)
+# 📊 커스텀 HTML 전광판 테이블 (본문)
 # -----------------------------------------------------------------------------
 if pre_mode: st.markdown("<div class='table-title'>🎯 장전 갭상승 예상지표 Top 10</div>", unsafe_allow_html=True)
 elif after_mode: st.markdown("<div class='table-title'>🌙 시간외 단일가 수급지표 Top 10</div>", unsafe_allow_html=True)
@@ -333,7 +251,6 @@ if not top_10.empty:
         '상승률': [f"{x:+.2f} %" for x in top_10['등락률']],
     }
     
-    # 장전 / 시간외 모드일 때 추가 열 구성
     if pre_mode and '☀️ 갭상승률' in top_10.columns:
         output_dict['☀️ 갭상승률'] = top_10['☀️ 갭상승률'].values
         output_dict['☀️ 체결가'] = top_10['☀️ 예상 체결가'].values
@@ -416,7 +333,6 @@ st.markdown("""
             var seconds = now.getSeconds().toString().padStart(2, '0');
             var timeString = year + '-' + month + '-' + date + ' ' + hours + ':' + minutes + ':' + seconds;
             
-            // 메인 DOM 및 iframe 부모 DOM 모두 업데이트
             var clockElement = document.getElementById('clockDisplay');
             if (clockElement) clockElement.innerText = timeString;
             
