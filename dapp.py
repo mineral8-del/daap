@@ -312,4 +312,29 @@ st.markdown("""
             
             try {
                 var clockElements = window.parent.document.querySelectorAll('#clockDisplay');
-                clockElements.forEach(function(el
+                clockElements.forEach(function(el) { el.innerText = timeString; });
+            } catch(e) {}
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+""", unsafe_allow_html=True)
+
+components.html("""
+    <script>
+        function updateClock() {
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = (now.getMonth() + 1).toString().padStart(2, '0');
+            var date = now.getDate().toString().padStart(2, '0');
+            var hours = now.getHours().toString().padStart(2, '0');
+            var minutes = now.getMinutes().toString().padStart(2, '0');
+            var seconds = now.getSeconds().toString().padStart(2, '0');
+            var timeString = year + '-' + month + '-' + date + ' ' + hours + ':' + minutes + ':' + seconds;
+            var clockElements = window.parent.document.querySelectorAll('#clockDisplay');
+            clockElements.forEach(function(el) { el.innerText = timeString; });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+""", height=0, width=0)
