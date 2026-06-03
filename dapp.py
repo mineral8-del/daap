@@ -24,48 +24,48 @@ if not APP_KEY or not APP_SECRET:
 
 URL_BASE = "https://openapi.koreainvestment.com:9443" 
 
-# 📺 [초압축 와이드 뷰] 레이아웃 설정
-st.set_page_config(layout="wide", page_title="🔴 하이모바일 주식 대시보드 LIVE", initial_sidebar_state="collapsed")
+# 📱 [쇼츠용 세로 뷰] 레이아웃 설정
+st.set_page_config(layout="wide", page_title="🔴 하이모바일 쇼츠 LIVE", initial_sidebar_state="collapsed")
 
-# 📺 1080p FHD 해상도 한 화면 완벽 압축 + 폰트 밸런스 조정 CSS
+# 📱 1080x1920 스마트폰 세로 해상도 꽉 찬 압축 CSS
 st.markdown("""
 <style>
-    /* 상하좌우 여백 최적화 */
-    .block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; padding-left: 1rem !important; padding-right: 1rem !important; max-width: 100%; }
+    /* 스마트폰 비율을 위한 좌우 여백 최소화, 상하 여백 팽창 */
+    .block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; padding-left: 0.2rem !important; padding-right: 0.2rem !important; max-width: 100%; }
     
     /* 불필요한 스트림릿 기본 메뉴 삭제 */
     header[data-testid="stHeader"] { display: none !important; }
     #MainMenu {visibility: hidden;} 
     footer {visibility: hidden;} 
     
-    /* 🎯 테이블 헤더 타이틀 */
-    .table-title { font-size: 1.6rem !important; font-weight: 900 !important; color: #FF4B4B !important; margin: 0; }
+    /* 🎯 테이블 헤더 타이틀 (모바일에서 눈에 띄게) */
+    .table-title { font-size: 2.2rem !important; font-weight: 900 !important; color: #FF4B4B !important; margin: 0; text-align: center; line-height: 1.2; }
     
-    /* 🕒 제목 옆에 붙을 디지털 시계 */
-    #clockDisplay { font-size: 1.5rem !important; font-weight: 900 !important; color: #ffffff !important; background-color: #111111 !important; padding: 4px 18px; border-radius: 8px; letter-spacing: 2px; }
+    /* 🕒 타이틀 아래 디지털 시계 */
+    #clockDisplay { font-size: 1.8rem !important; font-weight: 900 !important; color: #ffffff !important; background-color: #111111 !important; padding: 6px 20px; border-radius: 8px; letter-spacing: 2px; display: inline-block; margin-top: 10px; }
     
-    /* ✨ 테이블 디자인 (화면 꽉 채우기 위해 팽창) */
-    .custom-stock-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: center; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    /* ✨ 테이블 디자인 (스마트폰 화면에 꽉 차게) */
+    .custom-stock-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: center; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     .custom-stock-table thead tr { background-color: #1e293b; color: #ffffff; }
     
-    /* 💡 패딩을 대폭 늘려서 위아래로 길쭉하게 늘림 */
-    .custom-stock-table th { padding: 16px 10px; font-size: 1.3rem; font-weight: 800; }
-    .custom-stock-table td { padding: 16px 10px; border-bottom: 1px solid #e2e8f0; line-height: 1.3; }
+    /* 💡 가로폭이 좁으므로 좌우 패딩을 줄이고, 세로 패딩을 늘림 */
+    .custom-stock-table th { padding: 18px 2px; font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; }
+    .custom-stock-table td { padding: 18px 2px; border-bottom: 1px solid #e2e8f0; line-height: 1.3; }
     .custom-stock-table tbody tr:nth-of-type(even) { background-color: #f8fafc; } 
     
-    /* 💡 종목명 크기 */
-    .stock-name-cell { font-size: 2rem; font-weight: 900; color: #0f172a; letter-spacing: -1px; } 
+    /* 💡 종목명 크기 극대화 */
+    .stock-name-cell { font-size: 2.2rem; font-weight: 900; color: #0f172a; letter-spacing: -1.5px; } 
     .up-color { color: #ef4444 !important; } 
     .down-color { color: #3b82f6 !important; } 
     .flat-color { color: #64748b !important; } 
 
-    /* 🚀 흐르는 시세 전광판 (두께 확장) */
-    .marquee-container { width: 100%; overflow: hidden; background-color: #0f172a; color: white; padding: 12px 0; border-radius: 6px; margin-bottom: 10px; white-space: nowrap; position: relative;}
-    .marquee-content { display: inline-block; animation: scroll-left 40s linear infinite; font-size: 1.4rem; font-weight: 800; }
+    /* 🚀 흐르는 시세 전광판 (모바일에 맞게 두께와 폰트 조정) */
+    .marquee-container { width: 100%; overflow: hidden; background-color: #0f172a; color: white; padding: 15px 0; border-radius: 8px; margin-bottom: 15px; white-space: nowrap; position: relative;}
+    .marquee-content { display: inline-block; animation: scroll-left 35s linear infinite; font-size: 1.6rem; font-weight: 900; }
     @keyframes scroll-left { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
     
     /* ⏱️ 게이지 바 */
-    .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 4px; height: 6px; margin-bottom: 15px; overflow: hidden; }
+    .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 4px; height: 8px; margin-bottom: 20px; overflow: hidden; }
     #scanProgressBar { height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa, #ef4444); width: 0%; transition: width 0.1s linear; }
 
 </style>
@@ -174,7 +174,6 @@ if not df_universe.empty:
     df_universe = df_universe[df_universe['등락률'] > -2.0].copy()
     df_universe['10분_상승예측(%)'] = ((df_universe['등락률'] * 0.5) + np.log1p(df_universe['거래대금'])).round(2)
     df_universe['테마'] = df_universe['종목명'].apply(get_theme_icon)
-    df_universe['매매상태'] = df_universe.apply(lambda r: "🔥 돌파" if r['등락률'] >= 7.0 and r['거래대금'] > 50000 else ("💧 눌림" if 1.0 <= r['등락률'] < 5.0 and r['거래대금'] > 20000 else "▪️ 관망"), axis=1)
     
     top_10 = df_universe.sort_values(by='10분_상승예측(%)', ascending=False).head(10)
     
@@ -192,12 +191,12 @@ if not df_universe.empty:
     ticker_html_str = "&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;".join(ticker_items * 3)
 
 # -----------------------------------------------------------------------------
-# 🚀 역동적 애니메이션 (시세 흐름 띠 + 타이머 게이지) - 화면 최상단 배치
+# 🚀 역동적 애니메이션 (시세 흐름 띠 + 타이머 게이지) - 최상단
 # -----------------------------------------------------------------------------
 st.markdown(f"""
     <div class="marquee-container">
         <div class="marquee-content">
-            🔥 [하이모바일 LIVE 실시간 주도주 스캔] &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp; {ticker_html_str}
+            🔥 [하이모바일 쇼츠 LIVE 실시간 주도주] &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp; {ticker_html_str}
         </div>
     </div>
     <div class="progress-container"><div id="scanProgressBar"></div></div>
@@ -230,30 +229,28 @@ components.html("""
 """, height=0, width=0)
 
 # -----------------------------------------------------------------------------
-# 📊 [레이아웃 핵심] 표 제목과 디지털 시계를 같은 줄에 나란히 배치
+# 📊 [쇼츠 레이아웃 핵심] 타이틀 아래에 시계를 중앙 정렬로 배치
 # -----------------------------------------------------------------------------
-title_text = "🎯 장전 갭상승 예상지표 Top 10" if pre_mode else ("🌙 시간외 단일가 수급지표 Top 10" if after_mode else "📈 실시간 AI 주도성 랭킹 Top 10")
+title_text = "🎯 장전 갭상승 예상 Top 10" if pre_mode else ("🌙 시간외 수급지표 Top 10" if after_mode else "📈 실시간 AI 주도성 Top 10")
 
 st.markdown(f"""
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; margin-top: 10px;">
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 25px; margin-top: 5px;">
         <div class='table-title'>{title_text}</div>
         <div id="clockDisplay">0000-00-00 00:00:00</div>
     </div>
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 📊 커스텀 HTML 전광판 테이블 (본문)
+# 📊 커스텀 HTML 전광판 테이블 (세로형 압축: '상태' 열 제거, 4개 핵심 열만)
 # -----------------------------------------------------------------------------
 if not top_10.empty:
     output_dict = {
-        '상태': top_10['매매상태'].values,
-        'AI 스코어': [f"🚀 {x}점" for x in top_10['10분_상승예측(%)']],
+        'AI 점수': [f"🚀 {x}점" for x in top_10['10분_상승예측(%)']],
         '종목명': top_10['종목명'].values,
         '현재가': [f"{int(x):,} 원" for x in top_10['현재가']],
         '상승률': [f"{x:+.2f} %" for x in top_10['등락률']],
     }
     
-    # 장전 / 시간외 모드일 때 추가 열 구성
     if pre_mode and '☀️ 갭상승률' in top_10.columns:
         output_dict['☀️ 갭상승률'] = top_10['☀️ 갭상승률'].values
         output_dict['☀️ 체결가'] = top_10['☀️ 예상 체결가'].values
@@ -280,12 +277,12 @@ if not top_10.empty:
                 if '+' in str(row[rate_col]): color_cls = 'up-color'
                 elif '-' in str(row[rate_col]): color_cls = 'down-color'
 
-            # 💡 [핵심] 화면을 꽉 채우기 위해 폰트들을 전체적으로 크게 키웠습니다.
+            # 💡 [핵심] 쇼츠 화면에 맞게 폰트 크기 극대화
             if col == '종목명': style = "class='stock-name-cell'"
             elif col in ['현재가', '상승률', '☀️ 갭상승률', '☀️ 체결가', '🌙 시간외 등락', '🌙 시간외 가']: 
-                style = f"class='{color_cls}' style='font-size: 1.6rem; font-weight: 900;'"
-            elif col == 'AI 스코어': style = "style='font-size: 1.5rem; font-weight: 900; color: #d97706;'"
-            else: style = "style='font-size: 1.4rem; font-weight: 800; color: #444;'"
+                style = f"class='{color_cls}' style='font-size: 1.8rem; font-weight: 900;'"
+            elif col == 'AI 점수': style = "style='font-size: 1.6rem; font-weight: 900; color: #d97706;'"
+            else: style = "style='font-size: 1.6rem; font-weight: 800; color: #444;'"
             
             html_table += f"<td {style}>{val}</td>"
         html_table += "</tr>"
@@ -295,9 +292,8 @@ if not top_10.empty:
 else:
     st.error("데이터를 수집 중입니다. 장 시작 전이거나 네트워크 상태를 확인해주세요.")
 
-
 # -----------------------------------------------------------------------------
-# 🕒 시계 작동 자바스크립트 (눈에 보이지 않는 위치에서 실행)
+# 🕒 시계 작동 자바스크립트
 # -----------------------------------------------------------------------------
 st.markdown("""
     <script>
