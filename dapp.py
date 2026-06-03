@@ -29,56 +29,57 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 st.set_page_config(layout="wide", page_title="🔴 하이모바일 주식 대시보드 LIVE", initial_sidebar_state="collapsed")
 
 # 📺 모바일 가로 송출 극강의 세로 압축 + 예쁜 디자인 CSS
+# 📺 1080p FHD 해상도 꽉 채우는 전광판 황금 비율 CSS
 st.markdown("""
 <style>
-    /* 💡 세로 공백 파괴 (상단 여백 0) */
-    .block-container { padding-top: 0rem !important; padding-bottom: 0rem !important; padding-left: 0.2rem !important; padding-right: 0.2rem !important; max-width: 100%; }
+    /* 상하좌우 여백 최적화 */
+    .block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; padding-left: 1rem !important; padding-right: 1rem !important; max-width: 100%; }
     #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
-    [data-testid="column"] { padding-left: 0.1rem !important; padding-right: 0.1rem !important; }
+    [data-testid="column"] { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
     
-    /* 🏢 회사명 구석 배치 */
-    .company-sub { font-size: 0.75rem !important; color: #888888 !important; font-weight: 700; text-align: left; margin-bottom: -8px; }
+    /* 🏢 회사명 */
+    .company-sub { font-size: 1rem !important; color: #888888 !important; font-weight: 700; text-align: left; margin-bottom: -5px; }
     
-    /* 🕒 디지털 시계 슬림화 */
-    .center-clock-container { text-align: center; margin-top: -12px; margin-bottom: 1px; }
-    #clockDisplay { font-size: 1.15rem !important; font-weight: 800 !important; color: #ffffff !important; background-color: #111111 !important; padding: 1px 12px; border-radius: 4px; display: inline-block; letter-spacing: 1px; }
+    /* 🕒 큼직한 디지털 시계 */
+    .center-clock-container { text-align: center; margin-top: -20px; margin-bottom: 10px; }
+    #clockDisplay { font-size: 1.8rem !important; font-weight: 900 !important; color: #ffffff !important; background-color: #111111 !important; padding: 5px 20px; border-radius: 8px; letter-spacing: 2px; }
     
-    /* 🎯 테이블 헤더 타이틀 슬림화 */
-    .table-title { font-size: 1.1rem !important; font-weight: 900 !important; color: #FF4B4B !important; margin-top: 1px; margin-bottom: 1px; text-align: center; }
+    /* 🎯 테이블 헤더 타이틀 */
+    .table-title { font-size: 1.5rem !important; font-weight: 900 !important; color: #FF4B4B !important; margin-top: 10px; margin-bottom: 5px; text-align: center; }
     
-    /* ✨ 10개가 무조건 한 화면에 다 들어오도록 패딩 극강 압축 */
-    .custom-stock-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: center; background-color: #ffffff; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-top: 1px; }
+    /* ✨ 1080p 해상도 세로 길이에 딱 맞춘 테이블 패딩(여백) 팽창 */
+    .custom-stock-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: center; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     .custom-stock-table thead tr { background-color: #1e293b; color: #ffffff; }
-    .custom-stock-table th { padding: 4px 3px; font-size: 0.9rem; font-weight: 700; }
     
-    /* 💡 td 여백 살짝 조정 (하단 가이드 공간 확보) */
-    .custom-stock-table td { padding: 2.5px 3px; border-bottom: 1px solid #f1f5f9; line-height: 1.1; }
+    /* 💡 여기 패딩을 키워서 세로 찌그러짐 해결! */
+    .custom-stock-table th { padding: 12px 10px; font-size: 1.2rem; font-weight: 800; }
+    .custom-stock-table td { padding: 12px 10px; border-bottom: 1px solid #e2e8f0; line-height: 1.3; }
     .custom-stock-table tbody tr:nth-of-type(even) { background-color: #f8fafc; } 
     
-    /* 종목명 폰트 크기 */
-    .stock-name-cell { font-size: 1.45rem; font-weight: 900; color: #0f172a; letter-spacing: -1px; } 
+    /* 폰트 크기도 시원하게 확대 */
+    .stock-name-cell { font-size: 2.2rem; font-weight: 900; color: #0f172a; letter-spacing: -1.5px; } 
     .up-color { color: #ef4444 !important; } 
     .down-color { color: #3b82f6 !important; } 
     .flat-color { color: #64748b !important; } 
 
-    /* 🚀 흐르는 시세 전광판 슬림화 (40초 부드러운 속도 유지) */
-    .marquee-container { width: 100%; overflow: hidden; background-color: #0f172a; color: white; padding: 4px 0; border-radius: 4px; margin-bottom: 2px; white-space: nowrap; position: relative;}
-    .marquee-content { display: inline-block; animation: scroll-left 40s linear infinite; font-size: 1.05rem; font-weight: 800; }
+    /* 🚀 흐르는 시세 전광판 (두께 확장) */
+    .marquee-container { width: 100%; overflow: hidden; background-color: #0f172a; color: white; padding: 10px 0; border-radius: 6px; margin-bottom: 10px; white-space: nowrap; position: relative;}
+    .marquee-content { display: inline-block; animation: scroll-left 40s linear infinite; font-size: 1.3rem; font-weight: 800; }
     @keyframes scroll-left { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
     
-    /* ⏱️ 게이지 바 슬림화 */
-    .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 2px; height: 3px; margin-bottom: 2px; overflow: hidden; }
+    /* ⏱️ 게이지 바 */
+    .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 4px; height: 6px; margin-bottom: 10px; overflow: hidden; }
     #scanProgressBar { height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa, #ef4444); width: 0%; transition: width 0.1s linear; }
 
-    /* 💡 하단 가이드 패널 CSS */
+    /* 💡 하단 가이드 패널 큼직하게 */
     .guide-panel {
-        background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; 
-        padding: 6px 12px; margin-top: 4px; font-size: 0.85rem; color: #334155; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between;
+        background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px; 
+        padding: 15px 20px; margin-top: 15px; font-size: 1.1rem; color: #334155; 
+        display: flex; justify-content: space-between;
     }
-    .guide-box { width: 49%; }
-    .guide-title { font-size: 0.9rem; font-weight: 800; margin-bottom: 3px; }
-    .guide-list { margin: 0; padding-left: 18px; line-height: 1.35; font-weight: 600; }
+    .guide-box { width: 48%; }
+    .guide-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 8px; }
+    .guide-list { margin: 0; padding-left: 20px; line-height: 1.5; font-weight: 700; }
 </style>
 """, unsafe_allow_html=True)
 
