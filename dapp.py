@@ -29,42 +29,92 @@ st.set_page_config(layout="wide", page_title="🔴 하이모바일 쇼츠 LIVE",
 # 🎨 상태(우측 배치) CSS 최적화
 st.markdown("""
 <style>
-    /* 전체 배경 및 화면 꽉 차게 여백 최소화 */
+    /* 🚨 1. 상단 여백 및 불필요한 Streamlit UI 완벽 제거 🚨 */
     .stApp { background-color: #0f0f13; }
-    .block-container { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; max-width: 100%; }
-    header[data-testid="stHeader"], #MainMenu, footer { display: none !important; }
-    
-    /* 🎯 메인 타이틀 */
-    .main-title { color: #ff4b4b; font-size: 2.6rem; font-weight: 900; text-align: center; margin-bottom: 5px; letter-spacing: -1.5px; }
-    
-    /* ⚡ 노란색 시간 캡슐 */
-    .time-container { text-align: center; margin-bottom: 12px; }
-    .time-pill { background-color: #eab308; color: #000000; font-size: 1.4rem; font-weight: 900; padding: 6px 22px; border-radius: 50px; display: inline-block; box-shadow: 0 0 15px rgba(234, 179, 8, 0.4); letter-spacing: 1px; }
-    
-    /* 🃏 카드 전체 레이아웃 */
-    .stock-card { background-color: #1a1a21; border-radius: 12px; padding: 12px 15px; margin-bottom: 8px; display: flex; align-items: center; box-shadow: 0 3px 6px rgba(0,0,0,0.3); border: 1px solid #27272a; }
-    
-    /* 🔴 랭킹 동그라미 뱃지 */
-    .rank-circle { background: linear-gradient(135deg, #f87171, #ef4444); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; font-weight: 900; margin-right: 12px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.6); }
-    
-    /* 📝 왼쪽: 종목명 & 상태 영역 (💡 좌우로 나란히 배치!) */
-    .name-col { width: 42%; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 8px; text-align: left; }
-    .stock-name { color: white; font-size: 1.7rem; font-weight: 900; letter-spacing: -1px; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }
-    .status-text { font-size: 1.1rem; font-weight: 800; color: #a1a1aa; margin: 0; white-space: nowrap; flex-shrink: 0; }
-    
-    /* 🚀 중앙: 현재가 & 상승률 영역 (좌우 배치 유지) */
-    .center-col { width: 38%; display: flex; justify-content: center; align-items: baseline; gap: 8px; text-align: center; }
-    .current-price { font-size: 1.4rem; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; margin: 0; }
-    .center-return { font-size: 1.9rem; font-weight: 900; letter-spacing: -1px; margin: 0; }
-    
-    /* 💰 오른쪽: 기대수익률 영역 */
-    .right-col { width: 20%; text-align: right; display: flex; flex-direction: column; justify-content: center; }
-    .expected-label { color: #71717a; font-size: 1.0rem; font-weight: 700; margin-bottom: 2px; }
-    .expected-value { color: #22c55e; font-size: 1.9rem; font-weight: 900; letter-spacing: -1px; }
+    .block-container { 
+        padding-top: 0rem !important; 
+        padding-bottom: 0rem !important; 
+        padding-left: 5px !important; 
+        padding-right: 5px !important; 
+        margin-top: 0px !important; 
+        max-width: 100% !important; 
+    }
+    header[data-testid="stHeader"], 
+    div[data-testid="stToolbar"], 
+    div[data-testid="stDecoration"] { 
+        display: none !important; 
+    }
+
+    /* 🎯 2. 메인 타이틀 (어르신용 초거대 사이즈) */
+    .main-title { 
+        color: #ff4b4b; 
+        font-size: 3.5rem; 
+        font-weight: 900; 
+        text-align: center; 
+        margin-top: 5px;
+        margin-bottom: 5px; 
+        letter-spacing: -2px; 
+    }
+
+    /* ⚡ 3. 노란색 시간 캡슐 (더 굵고 선명하게) */
+    .time-container { text-align: center; margin-bottom: 15px; }
+    .time-pill { 
+        background-color: #eab308; 
+        color: #000000; 
+        font-size: 2.0rem; 
+        font-weight: 900; 
+        padding: 8px 30px; 
+        border-radius: 50px; 
+        display: inline-block; 
+        box-shadow: 0 0 20px rgba(234, 179, 8, 0.5); 
+    }
+
+    /* 🃏 4. 카드 전체 레이아웃 (세로 간격을 살짝 넓혀 가독성 향상) */
+    .stock-card { 
+        background-color: #1a1a21; 
+        border-radius: 15px; 
+        padding: 15px 8px; 
+        margin-bottom: 12px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: space-between;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+        border: 2px solid #27272a; 
+    }
+
+    /* 🔴 랭킹 동그라미 뱃지 (크기 대폭 확대) */
+    .rank-circle { 
+        background: linear-gradient(135deg, #f87171, #ef4444); 
+        color: white; 
+        width: 60px; 
+        height: 60px; 
+        border-radius: 50%; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        font-size: 2.6rem; 
+        font-weight: 900; 
+        margin-right: 10px; 
+        flex-shrink: 0; 
+    }
+
+    /* 📝 왼쪽: 종목명 & 상태 (위아래 배치하여 큰 글씨 확보) */
+    .name-col { width: 38%; display: flex; flex-direction: column; text-align: left; }
+    .stock-name { color: white; font-size: 2.6rem; font-weight: 900; letter-spacing: -2px; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.1; }
+    .status-text { font-size: 1.6rem; font-weight: 800; color: #a1a1aa; margin-top: 5px; }
+
+    /* 🚀 중앙: 현재가 & 상승률 (위아래 배치하여 글씨 크기 극대화) */
+    .center-col { width: 32%; display: flex; flex-direction: column; align-items: flex-end; text-align: right; padding-right: 10px; }
+    .current-price { font-size: 1.8rem; font-weight: 800; color: #ffffff; letter-spacing: -1px; margin: 0; line-height: 1.1; }
+    .center-return { font-size: 2.8rem; font-weight: 900; letter-spacing: -2px; margin-top: 5px; line-height: 1.1; }
+
+    /* 💰 오른쪽: 기대수익률 (한눈에 들어오게 강조 박스 처리) */
+    .right-col { width: 30%; text-align: center; display: flex; flex-direction: column; justify-content: center; background: rgba(34, 197, 94, 0.1); padding: 12px 5px; border-radius: 12px; }
+    .expected-label { color: #22c55e; font-size: 1.4rem; font-weight: 900; margin-bottom: 2px; letter-spacing: -1px; }
+    .expected-value { color: #22c55e; font-size: 3.0rem; font-weight: 900; letter-spacing: -2px; line-height: 1.1; }
 
 </style>
 """, unsafe_allow_html=True)
-
 KST = timezone(timedelta(hours=9))
 
 @st.cache_resource(ttl=3600*20)
