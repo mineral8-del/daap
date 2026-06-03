@@ -140,8 +140,11 @@ if not df_universe.empty:
     
     # 상태 업데이트
     st.session_state.prev_volume_dict = dict(zip(df_universe['종목코드'], df_universe['누적거래대금']))
-    df_universe['1분_거래대금'] = df_universe['1분_거래대금'].replace(0, df_universe['누적거래대금'] * 0.01)
-
+    df_universe['1분_거래대금'] = np.where(
+    df_universe['1분_거래대금'] == 0, 
+    df_universe['누적거래대금'] * 0.01, 
+    df_universe['1분_거래대금']
+)
     W_MOMENTUM = 0.4
     W_VOLUME = 0.8
     W_RISK = 0.5
