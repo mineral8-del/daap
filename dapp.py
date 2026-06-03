@@ -74,31 +74,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 📡 데이터 수집 및 상태 관리 함수
+# 📡 데이터 수집 함수 (고가 추출 부분 제거 및 정상 복구)
 # -----------------------------------------------------------------------------
-@st.cache_resource(ttl=3600*20)
-def get_access_token():
-    headers = {"content-type": "application/json"}
-    body = {"grant_type": "client_credentials", "appkey": APP_KEY, "appsecret": APP_SECRET}
-    try:
-        res = requests.post(f"{URL_BASE}/oauth2/tokenP", headers=headers, data=json.dumps(body))
-        res.raise_for_status()
-        return res.json()["access_token"]
-    except Exception as e:
-        st.error("API 토큰 발급 실패. 네트워크를 확인하세요.")
-        st.stop()
-
-def get_common_headers(tr_id):
-    token = get_access_token()
-    return {"Content-Type": "application/json", "authorization": f"Bearer {token}", "appKey": APP_KEY, "appSecret": APP_SECRET, "tr_id": tr_id}
-
 @st.cache_data(ttl=30)
 def get_kis_top_trading_value_stocks():
     url = f"{URL_BASE}/uapi/domestic-stock/v1/quotations/volume-rank"
     headers = get_common_headers("FHPST01710000")
     df_list = []
     
-    # 1만원~8만원 / 8만원~200만원 두 번 호출
     for params in [
         {"FID_COND_MRKT_DIV_CODE": "J", "FID_COND_SCR_DIV_CODE": "20171", "FID_INPUT_ISCD": "0000", "FID_DIV_CLS_CODE": "1", "FID_BLNG_CLS_CODE": "0", "FID_TRGT_CLS_CODE": "111111111", "FID_TRGT_EXLS_CLS_CODE": "111111", "FID_INPUT_PRICE_1": "10000", "FID_INPUT_PRICE_2": "80000", "FID_VOL_CNT": "", "FID_INPUT_DATE_1": ""},
         {"FID_COND_MRKT_DIV_CODE": "J", "FID_COND_SCR_DIV_CODE": "20171", "FID_INPUT_ISCD": "0000", "FID_DIV_CLS_CODE": "1", "FID_BLNG_CLS_CODE": "0", "FID_TRGT_CLS_CODE": "111111111", "FID_TRGT_EXLS_CLS_CODE": "111111", "FID_INPUT_PRICE_1": "80000", "FID_INPUT_PRICE_2": "2000000", "FID_VOL_CNT": "", "FID_INPUT_DATE_1": ""}
@@ -106,24 +89,97 @@ def get_kis_top_trading_value_stocks():
         try:
             res = requests.get(url, headers=headers, params=params)
             if res.json().get('rt_cd') == '0':
-                # 💡 'stck_hgpr'(고가) 추가 추출
-                df_list.append(pd.DataFrame(res.json()['output'])[['hts_kor_isnm', 'mksc_shrn_iscd', 'stck_prpr', 'prdy_ctrt', 'acml_tr_pbmn', 'stck_hgpr']])
+                # 💡 수정됨: stck_hgpr(고가) 제거하여 에러 방지
+                df_list.append(pd.DataFrame(res.json()['output'])[['hts_kor_isnm', 'mksc_shrn_iscd', 'stck_prpr', 'prdy_ctrt', 'acml_tr_pbmn']])
         except: continue
         
     if not df_list: return pd.DataFrame()
     df = pd.concat(df_list, ignore_index=True)
-    df.columns = ['종목명', '종목코드', '현재가', '등락률', '누적거래대금', '고가']
+    df.columns = ['종목명', '종목코드', '현재가', '등락률', '누적거래대금']
     
-    # 노이즈 필터링
     df = df[~df['종목명'].str.contains('|'.join(['KODEX', 'TIGER', 'KBSTAR', 'ACE', 'ARIRANG', 'HANARO', 'KOSEF', 'SOL', 'TIMEFOLIO', 'WOORI', '히어로즈', '마이티', '스팩', 'ETN']), case=False, regex=True)]
     
     df['현재가'] = pd.to_numeric(df['현재가'], errors='coerce')
     df['등락률'] = pd.to_numeric(df['등락률'], errors='coerce')
-    df['고가'] = pd.to_numeric(df['고가'], errors='coerce')
-    df['누적거래대금'] = pd.to_numeric(df['누적거래대금'], errors='coerce') / 1000000 # 백만 단위
+    df['누적거래대금'] = pd.to_numeric(df['누적거래대금'], errors='coerce') / 1000000 
     
     return df.drop_duplicates(subset=['종목코드']).dropna()
 
+# -----------------------------------------------------------------------------
+# 🚀 자동 새로고침 타이머 (1분)
+# -----------------------------------------------------------------------------
+try:
+    from streamlit_autorefresh import st_autorefresh
+    st_autorefresh(interval=60000, limit=10000, key="auto_refresh")
+except ImportError: pass
+
+# -----------------------------------------------------------------------------
+# 🧠 1분 수급 트래킹을 위한 세션 상태 초기화
+# -----------------------------------------------------------------------------
+if 'prev_volume_dict' not in st.session_state:
+    st.session_state.prev_volume_dict = {}
+
+# -----------------------------------------------------------------------------
+# 📊 알고리즘 고도화 데이터 세팅 (2단계 필터링 적용)
+# -----------------------------------------------------------------------------
+df_universe = get_kis_top_trading_value_stocks()
+top_10 = pd.DataFrame()
+
+if not df_universe.empty:
+    df_universe = df_universe[df_universe['등락률'] > -5.0].copy()
+    
+    # 💡 [핵심 1] 1분 순간 수급 계산
+    df_universe['1분_거래대금'] = df_universe.apply(
+        lambda row: row['누적거래대금'] - st.session_state.prev_volume_dict.get(row['종목코드'], row['누적거래대금']), axis=1
+    )
+    
+    # 세션 상태 업데이트
+    st.session_state.prev_volume_dict = dict(zip(df_universe['종목코드'], df_universe['누적거래대금']))
+    df_universe['1분_거래대금'] = df_universe['1분_거래대금'].replace(0, df_universe['누적거래대금'] * 0.01)
+
+    # 💡 가중치 세팅
+    W_MOMENTUM = 0.4
+    W_VOLUME = 0.8
+    W_RISK = 0.5
+
+    # 💡 1차 점수 계산 후 상위 20개 종목만 추출 (API 과부하 방지)
+    df_universe['1차_스코어'] = (df_universe['등락률'] * W_MOMENTUM) + (np.log1p(df_universe['1분_거래대금']) * W_VOLUME)
+    top_20 = df_universe.sort_values(by='1차_스코어', ascending=False).head(20).copy()
+
+    # 💡 [핵심 2] 상위 20개 종목만 '현재가 API'를 호출하여 고가(stck_hgpr) 수집
+    high_prices = []
+    price_headers = get_common_headers("FHKST01010100")
+    price_url = f"{URL_BASE}/uapi/domestic-stock/v1/quotations/inquire-price"
+    
+    for code in top_20['종목코드']:
+        try:
+            res = requests.get(price_url, headers=price_headers, params={"FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": code})
+            high_price = float(res.json()['output']['stck_hgpr'])
+            high_prices.append(high_price)
+        except:
+            # API 통신 실패 시 방어를 위해 현재가를 고가로 대체 (감점 0)
+            high_prices.append(top_20.loc[top_20['종목코드'] == code, '현재가'].values[0])
+            
+    top_20['고가'] = high_prices
+    
+    # 윗꼬리(%) 및 최종 AI 스코어 계산
+    top_20['윗꼬리(%)'] = ((top_20['고가'] - top_20['현재가']) / top_20['고가'] * 100).clip(lower=0)
+    top_20['AI_스코어'] = (top_20['1차_스코어'] - (top_20['윗꼬리(%)'] * W_RISK)).round(2)
+    
+    # 상태 텍스트
+    top_20['매매상태'] = top_20.apply(
+        lambda r: "🚀 수급 폭발형" if r['1분_거래대금'] > 5000 and r['윗꼬리(%)'] < 3.0
+        else ("🎯 S급 눌림목" if r['등락률'] < 0 and r['누적거래대금'] > 10000 
+        else "🔥 상승 추세형"), axis=1
+    )
+    
+    top_20['기대수익_str'] = top_20['AI_스코어'].apply(lambda x: f"+{max(0.1, x):.1f}%")
+    top_20['현재가_str'] = top_20['현재가'].apply(lambda x: f"{int(x):,}원") 
+    
+    # 💡 찐막(최종) TOP 10 추출
+    top_10 = top_20.sort_values(by='AI_스코어', ascending=False).head(10)
+
+# 이 아래부터는 기존 코드의 화면 출력 부분(카드 그리기 등)을 그대로 유지하시면 됩니다.
 # -----------------------------------------------------------------------------
 # 🚀 자동 새로고침 타이머 (1분)
 # -----------------------------------------------------------------------------
