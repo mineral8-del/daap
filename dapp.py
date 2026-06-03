@@ -26,7 +26,7 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 # 📱 [쇼츠용 세로 뷰] 레이아웃 설정
 st.set_page_config(layout="wide", page_title="🔴 하이모바일 쇼츠 LIVE", initial_sidebar_state="collapsed")
 
-# 🎨 10개 항목 & 현재가 추가를 위한 CSS 최적화
+# 🎨 10개 항목 & 현재가(좌우배치) CSS 최적화
 st.markdown("""
 <style>
     /* 전체 배경 및 화면 꽉 차게 여백 최소화 */
@@ -41,21 +41,21 @@ st.markdown("""
     .time-container { text-align: center; margin-bottom: 12px; }
     .time-pill { background-color: #eab308; color: #000000; font-size: 1.4rem; font-weight: 900; padding: 6px 22px; border-radius: 50px; display: inline-block; box-shadow: 0 0 15px rgba(234, 179, 8, 0.4); letter-spacing: 1px; }
     
-    /* 🃏 카드 전체 레이아웃 (10개가 다 들어가도록 슬림화) */
+    /* 🃏 카드 전체 레이아웃 */
     .stock-card { background-color: #1a1a21; border-radius: 12px; padding: 12px 15px; margin-bottom: 8px; display: flex; align-items: center; box-shadow: 0 3px 6px rgba(0,0,0,0.3); border: 1px solid #27272a; }
     
     /* 🔴 랭킹 동그라미 뱃지 */
     .rank-circle { background: linear-gradient(135deg, #f87171, #ef4444); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; font-weight: 900; margin-right: 12px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.6); }
     
-    /* 📝 왼쪽: 종목명 & 상태 영역 (공간을 살짝 줄임) */
+    /* 📝 왼쪽: 종목명 & 상태 영역 */
     .name-col { width: 30%; display: flex; flex-direction: column; justify-content: center; text-align: left; }
     .stock-name { color: white; font-size: 1.7rem; font-weight: 900; letter-spacing: -1px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .status-text { font-size: 1.1rem; font-weight: 800; color: #a1a1aa; }
     
-    /* 🚀 중앙: 현재가 & 상승률 영역 (공간을 넓히고 두 개를 위아래로 배치) */
-    .center-col { width: 45%; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-    .current-price { font-size: 1.4rem; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; margin-bottom: 2px; }
-    .center-return { font-size: 1.9rem; font-weight: 900; letter-spacing: -1px; }
+    /* 🚀 중앙: 현재가 & 상승률 영역 (💡 좌우로 나란히 배치되도록 flex-direction 기본값(row) 사용 및 gap 추가) */
+    .center-col { width: 45%; display: flex; justify-content: center; align-items: baseline; gap: 8px; text-align: center; }
+    .current-price { font-size: 1.4rem; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; margin: 0; }
+    .center-return { font-size: 1.9rem; font-weight: 900; letter-spacing: -1px; margin: 0; }
     
     /* 💰 오른쪽: 기대수익률 영역 */
     .right-col { width: 25%; text-align: right; display: flex; flex-direction: column; justify-content: center; }
@@ -128,7 +128,7 @@ if not df_universe.empty:
     
     # 기대수익 및 현재가 포맷
     df_universe['기대수익_str'] = df_universe['10분_상승예측(%)'].apply(lambda x: f"+{max(0.1, x):.1f}%")
-    df_universe['현재가_str'] = df_universe['현재가'].apply(lambda x: f"{int(x):,}원") # 💡 현재가 포맷팅 추가!
+    df_universe['현재가_str'] = df_universe['현재가'].apply(lambda x: f"{int(x):,}원") 
     
     # 점수 높은 순으로 10개 추출
     top_10 = df_universe.sort_values(by='10분_상승예측(%)', ascending=False).head(10)
@@ -159,7 +159,6 @@ if not top_10.empty:
         curr_ret_color = "#f87171" if curr_ret > 0 else "#38bdf8" if curr_ret < 0 else "#9ca3af"
         
         # ⚠️ HTML 구문 띄어쓰기 금지 구역 (코드 노출 방지)
-        # 💡 중앙(center-col)에 현재가(current-price)와 상승률(center-return)을 위아래로 배치
         cards_html += f"""<div class="stock-card">
 <div class="rank-circle">{i}</div>
 <div class="name-col">
