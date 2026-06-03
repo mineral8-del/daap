@@ -111,4 +111,88 @@ df_universe = get_kis_top_trading_value_stocks()
 top_10 = pd.DataFrame()
 
 if not df_universe.empty:
-    df_universe = df_universe
+    df_universe = df_universe[df_universe['등락률'] > -15.0].copy()
+    
+    # AI 스코어 계산 (기존 로직 유지)
+    df_universe['10분_상승예측(%)'] = ((df_universe['등락률'] * 0.5) + np.log1p(df_universe['거래대금'])).round(2)
+    
+    # 💡 [핵심] 사진처럼 상태 텍스트 만들기
+    df_universe['매매상태'] = df_universe.apply(
+        lambda r: "🔥 급등 진행형" if r['등락률'] >= 5.0 
+        else ("🎯 S급 눌림목" if r['등락률'] < 0 and r['거래대금'] > 10000 
+        else "🟡 지지선 근접"), axis=1
+    )
+    
+    # 💡 [핵심] 점수를 사진의 '기대수익(+00.0%)' 포맷으로 변경
+    df_universe['기대수익_str'] = df_universe['10분_상승예측(%)'].apply(lambda x: f"+{max(0.1, x):.1f}%")
+    
+    # 점수 높은 순으로 10개 추출
+    top_10 = df_universe.sort_values(by='10분_상승예측(%)', ascending=False).head(10)
+
+# -----------------------------------------------------------------------------
+# 🎯 화면 상단 (타이틀 & 노란색 시계 캡슐)
+# -----------------------------------------------------------------------------
+st.markdown("<div class='main-title'>AI 스윙 타점 TOP 10</div>", unsafe_allow_html=True)
+
+# 자바스크립트로 사진과 똑같은 형식("YYYY년 MM월 DD일 HH:MM 기준")의 시계 구현
+st.markdown("""
+    <div class='time-container'>
+        <div class='time-pill' id="clockDisplay">⚡ 0000년 00월 00일 00:00 기준</div>
+    </div>
+    <script>
+        function updateClock() {
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = (now.getMonth() + 1).toString().padStart(2, '0');
+            var date = now.getDate().toString().padStart(2, '0');
+            var hours = now.getHours().toString().padStart(2, '0');
+            var minutes = now.getMinutes().toString().padStart(2, '0');
+            
+            var timeString = '⚡ ' + year + '년 ' + month + '월 ' + date + '일 ' + hours + ':' + minutes + ' 기준';
+            
+            var clockElement = window.parent.document.getElementById('clockDisplay');
+            if (clockElement) clockElement.innerText = timeString;
+            
+            var localClock = document.getElementById('clockDisplay');
+            if (localClock) localClock.innerText = timeString;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+""", unsafe_allow_html=True)
+
+# -----------------------------------------------------------------------------
+# 🃏 커스텀 HTML 카드 리스트 그리기
+# -----------------------------------------------------------------------------
+if not top_10.empty:
+    cards_html = ""
+    
+    for i, (_, row) in enumerate(top_10.iterrows(), start=1):
+        # 파란색/빨간색 색상 결정
+        curr_ret = row['등락률']
+        curr_ret_str = f"{curr_ret:+.2f}%"
+        curr_ret_color = "#f87171" if curr_ret > 0 else "#38bdf8" if curr_ret < 0 else "#9ca3af"
+        
+        # 카드 HTML 블록 조립
+        cards_html += f"""
+        <div class="stock-card">
+            <div class="rank-circle">{i}</div>
+            
+            <div class="info-col">
+                <div class="name-row">
+                    <span class="stock-name">{row['종목명']}</span>
+                    <span class="current-return" style="color: {curr_ret_color};">({curr_ret_str})</span>
+                </div>
+                <div class="status-text">{row['매매상태']}</div>
+            </div>
+            
+            <div class="return-col">
+                <div class="expected-label">기대수익</div>
+                <div class="expected-value">{row['기대수익_str']}</div>
+            </div>
+        </div>
+        """
+        
+    st.markdown(cards_html, unsafe_allow_html=True)
+else:
+    st.error("데이터를 수집 중입니다. 장 시작 전이거나 네트워크 상태를 확인해주세요.")
