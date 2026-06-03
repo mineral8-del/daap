@@ -31,49 +31,43 @@ st.set_page_config(layout="wide", page_title="🔴 하이모바일 주식 대시
 st.markdown("""
 <style>
     /* 상하좌우 여백 최적화 */
-    .block-container { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; padding-left: 1rem !important; padding-right: 1rem !important; max-width: 100%; }
+    .block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; padding-left: 1rem !important; padding-right: 1rem !important; max-width: 100%; }
     
     /* 불필요한 스트림릿 기본 메뉴 삭제 */
     header[data-testid="stHeader"] { display: none !important; }
     #MainMenu {visibility: hidden;} 
     footer {visibility: hidden;} 
     
-    /* ✨ 테이블 디자인 */
+    /* 🎯 테이블 헤더 타이틀 */
+    .table-title { font-size: 1.6rem !important; font-weight: 900 !important; color: #FF4B4B !important; margin-top: 5px; margin-bottom: 10px; text-align: center; }
+    
+    /* ✨ 테이블 디자인 (화면 꽉 채우기 위해 팽창) */
     .custom-stock-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: center; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     .custom-stock-table thead tr { background-color: #1e293b; color: #ffffff; }
     
-    .custom-stock-table th { padding: 8px 5px; font-size: 1.2rem; font-weight: 800; }
-    .custom-stock-table td { padding: 8px 5px; border-bottom: 1px solid #e2e8f0; line-height: 1.2; }
+    /* 💡 패딩을 대폭 늘려서 위아래로 길쭉하게 늘림 */
+    .custom-stock-table th { padding: 15px 10px; font-size: 1.3rem; font-weight: 800; }
+    .custom-stock-table td { padding: 15px 10px; border-bottom: 1px solid #e2e8f0; line-height: 1.3; }
     .custom-stock-table tbody tr:nth-of-type(even) { background-color: #f8fafc; } 
     
     /* 💡 종목명 크기 */
-    .stock-name-cell { font-size: 1.7rem; font-weight: 900; color: #0f172a; letter-spacing: -1px; } 
+    .stock-name-cell { font-size: 2rem; font-weight: 900; color: #0f172a; letter-spacing: -1px; } 
     .up-color { color: #ef4444 !important; } 
     .down-color { color: #3b82f6 !important; } 
     .flat-color { color: #64748b !important; } 
 
-    /* 🚀 흐르는 시세 전광판 */
-    .marquee-container { width: 100%; overflow: hidden; background-color: #0f172a; color: white; padding: 8px 0; border-radius: 6px; margin-bottom: 6px; white-space: nowrap; position: relative;}
-    .marquee-content { display: inline-block; animation: scroll-left 40s linear infinite; font-size: 1.2rem; font-weight: 800; }
+    /* 🚀 흐르는 시세 전광판 (두께 확장) */
+    .marquee-container { width: 100%; overflow: hidden; background-color: #0f172a; color: white; padding: 12px 0; border-radius: 6px; margin-bottom: 10px; white-space: nowrap; position: relative;}
+    .marquee-content { display: inline-block; animation: scroll-left 40s linear infinite; font-size: 1.4rem; font-weight: 800; }
     @keyframes scroll-left { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
     
     /* ⏱️ 게이지 바 */
-    .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 4px; height: 5px; margin-bottom: 6px; overflow: hidden; }
+    .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 4px; height: 6px; margin-bottom: 10px; overflow: hidden; }
     #scanProgressBar { height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa, #ef4444); width: 0%; transition: width 0.1s linear; }
 
-    /* 💡 하단 가이드 패널 공간 최적화 */
-    .guide-panel {
-        background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px; 
-        padding: 10px 15px; margin-top: 10px; font-size: 1rem; color: #334155; 
-        display: flex; justify-content: space-between;
-    }
-    .guide-box { width: 48%; }
-    .guide-title { font-size: 1.1rem; font-weight: 900; margin-bottom: 5px; }
-    .guide-list { margin: 0; padding-left: 20px; line-height: 1.4; font-weight: 700; }
-
-    /* 🕒 하단 디지털 시계 */
-    .bottom-clock-container { text-align: center; margin-top: 15px; margin-bottom: 10px; }
-    #clockDisplay { font-size: 1.6rem !important; font-weight: 900 !important; color: #ffffff !important; background-color: #111111 !important; padding: 4px 15px; border-radius: 8px; letter-spacing: 2px; display: inline-block; }
+    /* 🕒 하단 디지털 시계 (더 큼직하고 시원하게) */
+    .bottom-clock-container { text-align: center; margin-top: 30px; margin-bottom: 20px; }
+    #clockDisplay { font-size: 2rem !important; font-weight: 900 !important; color: #ffffff !important; background-color: #111111 !important; padding: 6px 20px; border-radius: 8px; letter-spacing: 2px; display: inline-block; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -236,7 +230,7 @@ components.html("""
 """, height=0, width=0)
 
 # -----------------------------------------------------------------------------
-# 📊 커스텀 HTML 전광판 테이블 (본문)
+# 📊 커스텀 HTML 전광판 테이블 (본문 - 순위, 테마, 거래대금 제거)
 # -----------------------------------------------------------------------------
 if pre_mode: st.markdown("<div class='table-title'>🎯 장전 갭상승 예상지표 Top 10</div>", unsafe_allow_html=True)
 elif after_mode: st.markdown("<div class='table-title'>🌙 시간외 단일가 수급지표 Top 10</div>", unsafe_allow_html=True)
@@ -251,6 +245,7 @@ if not top_10.empty:
         '상승률': [f"{x:+.2f} %" for x in top_10['등락률']],
     }
     
+    # 장전 / 시간외 모드일 때 추가 열 구성
     if pre_mode and '☀️ 갭상승률' in top_10.columns:
         output_dict['☀️ 갭상승률'] = top_10['☀️ 갭상승률'].values
         output_dict['☀️ 체결가'] = top_10['☀️ 예상 체결가'].values
@@ -277,11 +272,12 @@ if not top_10.empty:
                 if '+' in str(row[rate_col]): color_cls = 'up-color'
                 elif '-' in str(row[rate_col]): color_cls = 'down-color'
 
+            # 💡 [핵심] 화면을 꽉 채우기 위해 폰트들을 전체적으로 크게 키웠습니다.
             if col == '종목명': style = "class='stock-name-cell'"
             elif col in ['현재가', '상승률', '☀️ 갭상승률', '☀️ 체결가', '🌙 시간외 등락', '🌙 시간외 가']: 
-                style = f"class='{color_cls}' style='font-size: 1.4rem; font-weight: 900;'"
-            elif col == 'AI 스코어': style = "style='font-size: 1.3rem; font-weight: 900; color: #d97706;'"
-            else: style = "style='font-size: 1.25rem; font-weight: 800; color: #444;'"
+                style = f"class='{color_cls}' style='font-size: 1.6rem; font-weight: 900;'"
+            elif col == 'AI 스코어': style = "style='font-size: 1.5rem; font-weight: 900; color: #d97706;'"
+            else: style = "style='font-size: 1.4rem; font-weight: 800; color: #444;'"
             
             html_table += f"<td {style}>{val}</td>"
         html_table += "</tr>"
@@ -290,30 +286,6 @@ if not top_10.empty:
     st.markdown(html_table, unsafe_allow_html=True)
 else:
     st.error("데이터를 수집 중입니다. 장 시작 전이거나 네트워크 상태를 확인해주세요.")
-
-# -----------------------------------------------------------------------------
-# 💡 하단 화면 채우기용 - 시청자 가이드 HUD 패널
-# -----------------------------------------------------------------------------
-st.markdown("""
-<div class="guide-panel">
-    <div class="guide-box">
-        <div class="guide-title" style="color: #FF4B4B;">💡 하이모바일 AI 스캐너 특징</div>
-        <ul class="guide-list">
-            <li><b>실시간 주도주 포착:</b> 당일 <b>대량의 거래대금</b>이 폭발하는 진짜 대장주만 스캔합니다.</li>
-            <li><b>안전망 필터링:</b> 스팩, ETF 및 <b>-2% 이하 급락주</b>는 단타 대상에서 즉시 제외합니다.</li>
-            <li><b>AI 스코어 정렬:</b> 수급/탄력을 분석하여 <b>10분 뒤 상승 확률</b>이 가장 높은 10개를 뽑습니다.</li>
-        </ul>
-    </div>
-    <div class="guide-box">
-        <div class="guide-title" style="color: #3b82f6;">📊 100% 활용하는 보는 법</div>
-        <ul class="guide-list">
-            <li><b>🔥 돌파:</b> 수급이 500억 이상 터지며 <b>+7% 이상 급등</b>으로 저항을 뚫는 추세 타점입니다.</li>
-            <li><b>💧 눌림:</b> 수급 유입 후 <b>+1~5% 구간</b>에서 잠시 숨을 고르는 단기 반등 타점입니다.</li>
-            <li><b>🚀 AI 스코어:</b> 점수가 높을수록 현재 시장의 돈이 가장 강력하게 쏠려있음을 의미합니다!</li>
-        </ul>
-    </div>
-</div>
-""", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # 🕒 화면 맨 하단에 배치된 디지털 시계
