@@ -26,7 +26,7 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 # 📱 [쇼츠용 세로 뷰] 레이아웃 설정
 st.set_page_config(layout="wide", page_title="🔴 하이모바일 쇼츠 LIVE", initial_sidebar_state="collapsed")
 
-# 🎨 10개 항목 & 현재가(좌우배치) CSS 최적화
+# 🎨 상태(우측 배치) CSS 최적화
 st.markdown("""
 <style>
     /* 전체 배경 및 화면 꽉 차게 여백 최소화 */
@@ -47,18 +47,18 @@ st.markdown("""
     /* 🔴 랭킹 동그라미 뱃지 */
     .rank-circle { background: linear-gradient(135deg, #f87171, #ef4444); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; font-weight: 900; margin-right: 12px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.6); }
     
-    /* 📝 왼쪽: 종목명 & 상태 영역 */
-    .name-col { width: 30%; display: flex; flex-direction: column; justify-content: center; text-align: left; }
-    .stock-name { color: white; font-size: 1.7rem; font-weight: 900; letter-spacing: -1px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .status-text { font-size: 1.1rem; font-weight: 800; color: #a1a1aa; }
+    /* 📝 왼쪽: 종목명 & 상태 영역 (💡 좌우로 나란히 배치!) */
+    .name-col { width: 42%; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 8px; text-align: left; }
+    .stock-name { color: white; font-size: 1.7rem; font-weight: 900; letter-spacing: -1px; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }
+    .status-text { font-size: 1.1rem; font-weight: 800; color: #a1a1aa; margin: 0; white-space: nowrap; flex-shrink: 0; }
     
-    /* 🚀 중앙: 현재가 & 상승률 영역 (💡 좌우로 나란히 배치되도록 flex-direction 기본값(row) 사용 및 gap 추가) */
-    .center-col { width: 45%; display: flex; justify-content: center; align-items: baseline; gap: 8px; text-align: center; }
+    /* 🚀 중앙: 현재가 & 상승률 영역 (좌우 배치 유지) */
+    .center-col { width: 38%; display: flex; justify-content: center; align-items: baseline; gap: 8px; text-align: center; }
     .current-price { font-size: 1.4rem; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; margin: 0; }
     .center-return { font-size: 1.9rem; font-weight: 900; letter-spacing: -1px; margin: 0; }
     
     /* 💰 오른쪽: 기대수익률 영역 */
-    .right-col { width: 25%; text-align: right; display: flex; flex-direction: column; justify-content: center; }
+    .right-col { width: 20%; text-align: right; display: flex; flex-direction: column; justify-content: center; }
     .expected-label { color: #71717a; font-size: 1.0rem; font-weight: 700; margin-bottom: 2px; }
     .expected-value { color: #22c55e; font-size: 1.9rem; font-weight: 900; letter-spacing: -1px; }
 
