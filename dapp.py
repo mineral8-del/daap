@@ -39,15 +39,18 @@ st.markdown("""
     footer {visibility: hidden;} 
     
     /* 🎯 테이블 헤더 타이틀 */
-    .table-title { font-size: 1.6rem !important; font-weight: 900 !important; color: #FF4B4B !important; margin-top: 5px; margin-bottom: 10px; text-align: center; }
+    .table-title { font-size: 1.6rem !important; font-weight: 900 !important; color: #FF4B4B !important; margin: 0; }
+    
+    /* 🕒 제목 옆에 붙을 디지털 시계 */
+    #clockDisplay { font-size: 1.5rem !important; font-weight: 900 !important; color: #ffffff !important; background-color: #111111 !important; padding: 4px 18px; border-radius: 8px; letter-spacing: 2px; }
     
     /* ✨ 테이블 디자인 (화면 꽉 채우기 위해 팽창) */
     .custom-stock-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: center; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     .custom-stock-table thead tr { background-color: #1e293b; color: #ffffff; }
     
     /* 💡 패딩을 대폭 늘려서 위아래로 길쭉하게 늘림 */
-    .custom-stock-table th { padding: 15px 10px; font-size: 1.3rem; font-weight: 800; }
-    .custom-stock-table td { padding: 15px 10px; border-bottom: 1px solid #e2e8f0; line-height: 1.3; }
+    .custom-stock-table th { padding: 16px 10px; font-size: 1.3rem; font-weight: 800; }
+    .custom-stock-table td { padding: 16px 10px; border-bottom: 1px solid #e2e8f0; line-height: 1.3; }
     .custom-stock-table tbody tr:nth-of-type(even) { background-color: #f8fafc; } 
     
     /* 💡 종목명 크기 */
@@ -62,12 +65,9 @@ st.markdown("""
     @keyframes scroll-left { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
     
     /* ⏱️ 게이지 바 */
-    .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 4px; height: 6px; margin-bottom: 10px; overflow: hidden; }
+    .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 4px; height: 6px; margin-bottom: 15px; overflow: hidden; }
     #scanProgressBar { height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa, #ef4444); width: 0%; transition: width 0.1s linear; }
 
-    /* 🕒 하단 디지털 시계 (더 큼직하고 시원하게) */
-    .bottom-clock-container { text-align: center; margin-top: 30px; margin-bottom: 20px; }
-    #clockDisplay { font-size: 2rem !important; font-weight: 900 !important; color: #ffffff !important; background-color: #111111 !important; padding: 6px 20px; border-radius: 8px; letter-spacing: 2px; display: inline-block; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -230,12 +230,20 @@ components.html("""
 """, height=0, width=0)
 
 # -----------------------------------------------------------------------------
-# 📊 커스텀 HTML 전광판 테이블 (본문 - 순위, 테마, 거래대금 제거)
+# 📊 [레이아웃 핵심] 표 제목과 디지털 시계를 같은 줄에 나란히 배치
 # -----------------------------------------------------------------------------
-if pre_mode: st.markdown("<div class='table-title'>🎯 장전 갭상승 예상지표 Top 10</div>", unsafe_allow_html=True)
-elif after_mode: st.markdown("<div class='table-title'>🌙 시간외 단일가 수급지표 Top 10</div>", unsafe_allow_html=True)
-else: st.markdown("<div class='table-title'>📈 실시간 AI 주도성 랭킹 Top 10</div>", unsafe_allow_html=True)
+title_text = "🎯 장전 갭상승 예상지표 Top 10" if pre_mode else ("🌙 시간외 단일가 수급지표 Top 10" if after_mode else "📈 실시간 AI 주도성 랭킹 Top 10")
 
+st.markdown(f"""
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; margin-top: 10px;">
+        <div class='table-title'>{title_text}</div>
+        <div id="clockDisplay">0000-00-00 00:00:00</div>
+    </div>
+""", unsafe_allow_html=True)
+
+# -----------------------------------------------------------------------------
+# 📊 커스텀 HTML 전광판 테이블 (본문)
+# -----------------------------------------------------------------------------
 if not top_10.empty:
     output_dict = {
         '상태': top_10['매매상태'].values,
@@ -287,13 +295,11 @@ if not top_10.empty:
 else:
     st.error("데이터를 수집 중입니다. 장 시작 전이거나 네트워크 상태를 확인해주세요.")
 
+
 # -----------------------------------------------------------------------------
-# 🕒 화면 맨 하단에 배치된 디지털 시계
+# 🕒 시계 작동 자바스크립트 (눈에 보이지 않는 위치에서 실행)
 # -----------------------------------------------------------------------------
 st.markdown("""
-    <div class='bottom-clock-container'>
-        <div id="clockDisplay">0000-00-00 00:00:00</div>
-    </div>
     <script>
         function updateClock() {
             var now = new Date();
