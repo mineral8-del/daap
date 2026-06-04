@@ -29,12 +29,12 @@ st.set_page_config(layout="wide", page_title="🔴 하이모바일 쇼츠 LIVE",
 # 🎨 쇼츠 화면 꽉 채우기 + 하단 고정 전광판 CSS
 st.markdown("""
 <style>
-    /* 1. 스트림릿 기본 여백 제거 (하단은 전광판 높이만큼 여유를 줌) */
+    /* 1. 스트림릿 기본 여백 제거 (하단 여백을 대폭 늘려 가림 방지) */
     html, body, [class*="css"] { margin: 0 !important; padding: 0 !important; }
     .stApp { background-color: #0b1120; }
     .block-container { 
         padding-top: 0rem !important; 
-        padding-bottom: 5rem !important; /* 🔥 고정된 전광판에 안 가려지도록 하단 여백 추가 */
+        padding-bottom: 100px !important; /* 🔥 하단 여백을 100px로 넉넉하게 확보 */
         padding-left: 0.3rem !important; 
         padding-right: 0.3rem !important; 
         max-width: 100% !important; 
@@ -77,20 +77,20 @@ st.markdown("""
     .expected-label { color: #94a3b8; font-size: 1.1rem; font-weight: 800; margin-bottom: 4px; }
     .expected-value { color: #22c55e; font-size: 2.1rem; font-weight: 900; letter-spacing: -1px; }
 
-    /* 🔥 [핵심 해결] 유튜브 면책 조항 화면 맨 하단에 '고정' */
+    /* 🔥 유튜브 면책 조항 화면 맨 하단에 '고정' */
     .marquee-container { 
-        position: fixed; /* 화면 스크롤과 무관하게 무조건 고정 */
-        bottom: 0; /* 바닥에 딱 붙임 */
+        position: fixed; 
+        bottom: 0; 
         left: 0; 
         width: 100%; 
         overflow: hidden; 
         background-color: #7f1d1d; 
         color: white; 
         padding: 14px 0; 
-        border-top: 4px solid #dc2626; /* 위쪽 테두리만 강조 */
+        border-top: 4px solid #dc2626; 
         white-space: nowrap; 
-        box-shadow: 0 -5px 10px rgba(0,0,0,0.6); /* 그림자를 위로 쏴서 입체감 부여 */
-        z-index: 9999; /* 모든 화면 요소 중 가장 위에 오도록 설정 */
+        box-shadow: 0 -5px 10px rgba(0,0,0,0.6); 
+        z-index: 9999; 
     }
     .marquee-content { display: inline-block; animation: scroll-left 18s linear infinite; font-size: 1.5rem; font-weight: 900; }
     @keyframes scroll-left { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
@@ -228,6 +228,9 @@ if not top_10.empty:
 <div class="expected-value">{row['기대수익_str']}</div>
 </div>
 </div>"""
+    
+    # 🔥 [핵심 해결 포인트] 10번 카드가 공중에 뜬 전광판에 안 가려지도록 밑에 투명 방석(80px)을 추가!
+    cards_html += "<div style='height: 80px; width: 100%; opacity: 0;'></div>"
         
     st.markdown(cards_html, unsafe_allow_html=True)
 else:
