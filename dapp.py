@@ -26,60 +26,60 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 # 📱 [쇼츠용 세로 뷰] 여백을 완전히 없애기 위한 기본 레이아웃 설정
 st.set_page_config(layout="wide", page_title="🔴 하이모바일 쇼츠 LIVE", initial_sidebar_state="collapsed")
 
-# 🎨 쇼츠 화면 꽉 채우기 '극한의 여백 제거' CSS
+# 🎨 쇼츠 화면 꽉 채우기 '슈퍼 라지 폰트 + 극대화된 상하 여백' CSS
 st.markdown("""
 <style>
-    /* 1. 스트림릿 기본 여백 완벽 제거 (풀스크린의 핵심) */
+    /* 1. 스트림릿 기본 여백 완벽 제거 */
     html, body, [class*="css"] { margin: 0 !important; padding: 0 !important; }
     .stApp { background-color: #0b1120; }
     .block-container { 
         padding-top: 0rem !important; 
         padding-bottom: 0rem !important; 
-        padding-left: 0.2rem !important; 
-        padding-right: 0.2rem !important; 
+        padding-left: 0.3rem !important; 
+        padding-right: 0.3rem !important; 
         max-width: 100% !important; 
     }
     header[data-testid="stHeader"], #MainMenu, footer, div[data-testid="stToolbar"] { display: none !important; }
     
     /* 🔴 유튜브 방어용 라이브 깜빡임 애니메이션 */
-    @keyframes blink { 0% { opacity: 1; text-shadow: 0 0 10px red; } 50% { opacity: 0.3; } 100% { opacity: 1; text-shadow: 0 0 10px red; } }
-    .live-dot { color: #ef4444; animation: blink 1.5s infinite; font-size: 1.2rem; vertical-align: middle; }
+    @keyframes blink { 0% { opacity: 1; text-shadow: 0 0 12px red; } 50% { opacity: 0.3; } 100% { opacity: 1; text-shadow: 0 0 12px red; } }
+    .live-dot { color: #ef4444; animation: blink 1.5s infinite; font-size: 1.5rem; vertical-align: middle; }
     
-    /* 🎯 메인 타이틀 (상단 여백 최소화) */
-    .main-title { color: #facc15; font-size: 2.2rem; font-weight: 900; text-align: center; margin-top: 5px; margin-bottom: 2px; letter-spacing: -1px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+    /* 🎯 메인 타이틀 (폰트 대폭 확대) */
+    .main-title { color: #facc15; font-size: 2.8rem; font-weight: 900; text-align: center; margin-top: 8px; margin-bottom: 5px; letter-spacing: -1.5px; text-shadow: 3px 3px 6px rgba(0,0,0,0.6); }
     
-    /* 🕒 상단 디지털 시계 */
-    .time-container { text-align: center; margin-bottom: 8px; }
-    #clockDisplay { background-color: #1e293b; color: #ffffff; font-size: 1.4rem; font-weight: 900; padding: 4px 15px; border-radius: 8px; border: 2px solid #334155; display: inline-block; letter-spacing: 2px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
+    /* 🕒 상단 디지털 시계 (폰트 및 상하 여백 확대) */
+    .time-container { text-align: center; margin-bottom: 12px; }
+    #clockDisplay { background-color: #1e293b; color: #ffffff; font-size: 1.8rem; font-weight: 900; padding: 8px 25px; border-radius: 12px; border: 2px solid #334155; display: inline-block; letter-spacing: 2px; box-shadow: inset 0 0 12px rgba(0,0,0,0.8); }
     
-    /* ⏱️ 30초 갱신 게이지 바 */
-    .progress-container { width: 100%; background-color: #1e293b; border-radius: 4px; height: 6px; margin-bottom: 8px; overflow: hidden; }
+    /* ⏱️ 30초 갱신 게이지 바 (두께 2배 확대) */
+    .progress-container { width: 100%; background-color: #1e293b; border-radius: 6px; height: 10px; margin-bottom: 12px; overflow: hidden; }
     #scanProgressBar { height: 100%; background: linear-gradient(90deg, #3b82f6, #facc15, #ef4444); width: 0%; transition: width 0.1s linear; }
     
-    /* 🃏 카드 전체 레이아웃 (세로 화면을 꽉 채우기 위해 위아래 패딩 증가) */
-    .stock-card { background-color: #151e2d; border-radius: 10px; padding: 14px 8px; margin-bottom: 7px; display: flex; align-items: center; border: 1px solid #334155; box-shadow: 0 4px 6px rgba(0,0,0,0.4); }
+    /* 🃏 카드 전체 레이아웃 (세로 빈 공간을 채우기 위해 위아래 padding과 margin 대폭 증가) */
+    .stock-card { background-color: #151e2d; border-radius: 12px; padding: 22px 10px; margin-bottom: 12px; display: flex; align-items: center; border: 1px solid #334155; box-shadow: 0 5px 8px rgba(0,0,0,0.5); }
     
-    /* 🔴 랭킹 동그라미 뱃지 */
-    .rank-circle { background: linear-gradient(135deg, #ef4444, #991b1b); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; margin-right: 8px; flex-shrink: 0; border: 2px solid #fca5a5; }
+    /* 🔴 랭킹 동그라미 뱃지 (왕방울 사이즈로 확대) */
+    .rank-circle { background: linear-gradient(135deg, #ef4444, #991b1b); color: white; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.0rem; font-weight: 900; margin-right: 12px; flex-shrink: 0; border: 2px solid #fca5a5; }
     
-    /* 📝 왼쪽: 종목명 & 상태 영역 */
+    /* 📝 왼쪽: 종목명 & 상태 영역 (폰트 폭발적 확대) */
     .name-col { width: 44%; display: flex; flex-direction: column; justify-content: center; text-align: left; }
-    .stock-name { color: #ffffff; font-size: 1.7rem; font-weight: 900; letter-spacing: -1px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .status-text { font-size: 1.0rem; font-weight: 800; color: #fbbf24; margin: 0; }
+    .stock-name { color: #ffffff; font-size: 2.2rem; font-weight: 900; letter-spacing: -1.5px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .status-text { font-size: 1.3rem; font-weight: 800; color: #fbbf24; margin: 0; }
     
     /* 🚀 중앙: 현재가 & 상승률 영역 */
-    .center-col { width: 34%; display: flex; flex-direction: column; justify-content: center; text-align: right; padding-right: 8px; }
-    .current-price { font-size: 1.4rem; font-weight: 900; color: #ffffff; letter-spacing: -0.5px; }
-    .center-return { font-size: 1.5rem; font-weight: 900; letter-spacing: -1px; }
+    .center-col { width: 34%; display: flex; flex-direction: column; justify-content: center; text-align: right; padding-right: 12px; }
+    .current-price { font-size: 1.8rem; font-weight: 900; color: #e2e8f0; letter-spacing: -0.5px; }
+    .center-return { font-size: 2.1rem; font-weight: 900; letter-spacing: -1px; margin-top: 2px; }
     
-    /* 💰 오른쪽: 기대수익률 영역 (세로 화면 꽉 차게 폰트 미세 조정) */
-    .right-col { width: 22%; text-align: center; background-color: #0f172a; border-radius: 6px; padding: 8px 0; border: 1px solid #334155; }
-    .expected-label { color: #94a3b8; font-size: 0.85rem; font-weight: 800; margin-bottom: 2px; }
-    .expected-value { color: #22c55e; font-size: 1.6rem; font-weight: 900; letter-spacing: -1px; }
+    /* 💰 오른쪽: 기대수익률 영역 (박스 크기 및 폰트 확대) */
+    .right-col { width: 22%; text-align: center; background-color: #0f172a; border-radius: 8px; padding: 12px 0; border: 1px solid #334155; }
+    .expected-label { color: #94a3b8; font-size: 1.1rem; font-weight: 800; margin-bottom: 4px; }
+    .expected-value { color: #22c55e; font-size: 2.1rem; font-weight: 900; letter-spacing: -1px; }
 
-    /* 🛡️ 유튜브 면책 조항 흐르는 전광판 (하단에 꽉 붙게) */
-    .marquee-container { width: 100%; overflow: hidden; background-color: #7f1d1d; color: white; padding: 6px 0; margin-top: 5px; margin-bottom: 5px; border-radius: 6px; border: 1px solid #dc2626; white-space: nowrap; }
-    .marquee-content { display: inline-block; animation: scroll-left 20s linear infinite; font-size: 1.1rem; font-weight: 800; }
+    /* 🛡️ 유튜브 면책 조항 흐르는 전광판 (하단에 묵직하게 고정) */
+    .marquee-container { width: 100%; overflow: hidden; background-color: #7f1d1d; color: white; padding: 12px 0; margin-top: 10px; margin-bottom: 15px; border-radius: 8px; border: 2px solid #dc2626; white-space: nowrap; box-shadow: 0 4px 6px rgba(0,0,0,0.5); }
+    .marquee-content { display: inline-block; animation: scroll-left 20s linear infinite; font-size: 1.4rem; font-weight: 900; }
     @keyframes scroll-left { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
 
 </style>
