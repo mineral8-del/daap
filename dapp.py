@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone, time as dt_time
 import FinanceDataReader as fdr
 import os
 from dotenv import load_dotenv
+import streamlit.components.v1 as components
 
 # -----------------------------------------------------------------------------
 # [설정] 한국투자증권 API KEY (.env 파일 연동)
@@ -26,41 +27,55 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 # 📱 [쇼츠용 세로 뷰] 레이아웃 설정
 st.set_page_config(layout="wide", page_title="🔴 하이모바일 쇼츠 LIVE", initial_sidebar_state="collapsed")
 
-# 🎨 상태(우측 배치) CSS 최적화
+# 🎨 40대 타겟 HTS 컬러 & 동적 애니메이션 CSS
 st.markdown("""
 <style>
-    /* 전체 배경 및 화면 꽉 차게 여백 최소화 */
-    .stApp { background-color: #0f0f13; }
+    /* 전체 배경: 눈이 편안하면서도 신뢰감 있는 딥 네이비 (HTS 다크모드 스타일) */
+    .stApp { background-color: #0b1120; }
     .block-container { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; max-width: 100%; }
     header[data-testid="stHeader"], #MainMenu, footer { display: none !important; }
     
+    /* 🔴 유튜브 방어용 라이브 깜빡임 애니메이션 */
+    @keyframes blink { 0% { opacity: 1; text-shadow: 0 0 10px red; } 50% { opacity: 0.3; } 100% { opacity: 1; text-shadow: 0 0 10px red; } }
+    .live-dot { color: #ef4444; animation: blink 1.5s infinite; font-size: 1.2rem; vertical-align: middle; }
+    
     /* 🎯 메인 타이틀 */
-    .main-title { color: #ff4b4b; font-size: 2.6rem; font-weight: 900; text-align: center; margin-bottom: 5px; letter-spacing: -1.5px; }
+    .main-title { color: #facc15; font-size: 2.2rem; font-weight: 900; text-align: center; margin-bottom: 5px; letter-spacing: -1px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
     
-    /* ⚡ 노란색 시간 캡슐 */
-    .time-container { text-align: center; margin-bottom: 12px; }
-    .time-pill { background-color: #eab308; color: #000000; font-size: 1.4rem; font-weight: 900; padding: 6px 22px; border-radius: 50px; display: inline-block; box-shadow: 0 0 15px rgba(234, 179, 8, 0.4); letter-spacing: 1px; }
+    /* 🕒 상단 디지털 시계 (초 단위로 움직여서 정지화면 방지) */
+    .time-container { text-align: center; margin-bottom: 10px; }
+    #clockDisplay { background-color: #1e293b; color: #ffffff; font-size: 1.6rem; font-weight: 900; padding: 6px 20px; border-radius: 8px; border: 2px solid #334155; display: inline-block; letter-spacing: 2px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
     
-    /* 🃏 카드 전체 레이아웃 */
-    .stock-card { background-color: #1a1a21; border-radius: 12px; padding: 12px 15px; margin-bottom: 8px; display: flex; align-items: center; box-shadow: 0 3px 6px rgba(0,0,0,0.3); border: 1px solid #27272a; }
+    /* ⏱️ 30초 갱신 게이지 바 (역동성 추가) */
+    .progress-container { width: 100%; background-color: #1e293b; border-radius: 4px; height: 8px; margin-bottom: 12px; overflow: hidden; }
+    #scanProgressBar { height: 100%; background: linear-gradient(90deg, #3b82f6, #facc15, #ef4444); width: 0%; transition: width 0.1s linear; }
+    
+    /* 🃏 카드 전체 레이아웃 (선명한 테두리와 입체감) */
+    .stock-card { background-color: #151e2d; border-radius: 10px; padding: 12px 10px; margin-bottom: 8px; display: flex; align-items: center; border: 1px solid #334155; box-shadow: 0 4px 6px rgba(0,0,0,0.4); }
+    .stock-card:hover { border-color: #facc15; background-color: #1e293b; } /* 호버 효과 */
     
     /* 🔴 랭킹 동그라미 뱃지 */
-    .rank-circle { background: linear-gradient(135deg, #f87171, #ef4444); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; font-weight: 900; margin-right: 12px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.6); }
+    .rank-circle { background: linear-gradient(135deg, #ef4444, #991b1b); color: white; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; font-weight: 900; margin-right: 10px; flex-shrink: 0; border: 2px solid #fca5a5; }
     
-    /* 📝 왼쪽: 종목명 & 상태 영역 (💡 좌우로 나란히 배치!) */
-    .name-col { width: 42%; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 8px; text-align: left; }
-    .stock-name { color: white; font-size: 1.7rem; font-weight: 900; letter-spacing: -1px; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }
-    .status-text { font-size: 1.1rem; font-weight: 800; color: #a1a1aa; margin: 0; white-space: nowrap; flex-shrink: 0; }
+    /* 📝 왼쪽: 종목명 & 상태 영역 */
+    .name-col { width: 43%; display: flex; flex-direction: column; justify-content: center; text-align: left; }
+    .stock-name { color: #ffffff; font-size: 1.6rem; font-weight: 900; letter-spacing: -1px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .status-text { font-size: 1.0rem; font-weight: 800; color: #fbbf24; margin: 0; }
     
-    /* 🚀 중앙: 현재가 & 상승률 영역 (좌우 배치 유지) */
-    .center-col { width: 38%; display: flex; justify-content: center; align-items: baseline; gap: 8px; text-align: center; }
-    .current-price { font-size: 1.4rem; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; margin: 0; }
-    .center-return { font-size: 1.9rem; font-weight: 900; letter-spacing: -1px; margin: 0; }
+    /* 🚀 중앙: 현재가 & 상승률 영역 (HTS 스타일 직관적 배치) */
+    .center-col { width: 35%; display: flex; flex-direction: column; justify-content: center; text-align: right; padding-right: 10px; }
+    .current-price { font-size: 1.4rem; font-weight: 900; color: #ffffff; letter-spacing: -0.5px; }
+    .center-return { font-size: 1.5rem; font-weight: 900; letter-spacing: -1px; }
     
-    /* 💰 오른쪽: 기대수익률 영역 */
-    .right-col { width: 20%; text-align: right; display: flex; flex-direction: column; justify-content: center; }
-    .expected-label { color: #71717a; font-size: 1.0rem; font-weight: 700; margin-bottom: 2px; }
-    .expected-value { color: #22c55e; font-size: 1.9rem; font-weight: 900; letter-spacing: -1px; }
+    /* 💰 오른쪽: 기대수익률 영역 (강조) */
+    .right-col { width: 22%; text-align: center; background-color: #0f172a; border-radius: 6px; padding: 6px 0; border: 1px solid #334155; }
+    .expected-label { color: #94a3b8; font-size: 0.9rem; font-weight: 800; margin-bottom: 2px; }
+    .expected-value { color: #22c55e; font-size: 1.6rem; font-weight: 900; letter-spacing: -1px; }
+
+    /* 🛡️ 유튜브 면책 조항 흐르는 전광판 (가장 중요) */
+    .marquee-container { width: 100%; overflow: hidden; background-color: #7f1d1d; color: white; padding: 8px 0; margin-top: 10px; border-radius: 6px; border: 1px solid #dc2626; white-space: nowrap; }
+    .marquee-content { display: inline-block; animation: scroll-left 20s linear infinite; font-size: 1.1rem; font-weight: 800; }
+    @keyframes scroll-left { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
 
 </style>
 """, unsafe_allow_html=True)
@@ -81,7 +96,8 @@ def get_common_headers(tr_id):
     if not token: token = get_access_token()
     return {"Content-Type": "application/json", "authorization": f"Bearer {token}", "appKey": APP_KEY, "appSecret": APP_SECRET, "tr_id": tr_id}
 
-@st.cache_data(ttl=30)
+# 30초마다 캐시가 풀리도록 설정하여 데이터 갱신
+@st.cache_data(ttl=15)
 def get_kis_top_trading_value_stocks():
     url = f"{URL_BASE}/uapi/domestic-stock/v1/quotations/volume-rank"
     headers = get_common_headers("FHPST01710000")
@@ -100,11 +116,11 @@ def get_kis_top_trading_value_stocks():
     return df.sort_values(by='거래대금', ascending=False).drop_duplicates(subset=['종목코드']).dropna()
 
 # -----------------------------------------------------------------------------
-# 🚀 자동 새로고침 타이머 (1분)
+# 🚀 자동 새로고침 타이머 (30초 리셋으로 변경)
 # -----------------------------------------------------------------------------
 try:
     from streamlit_autorefresh import st_autorefresh
-    st_autorefresh(interval=60000, limit=10000, key="auto_refresh")
+    st_autorefresh(interval=30000, limit=10000, key="auto_refresh")
 except ImportError: pass
 
 # -----------------------------------------------------------------------------
@@ -121,8 +137,8 @@ if not df_universe.empty:
     
     # 상태 텍스트
     df_universe['매매상태'] = df_universe.apply(
-        lambda r: "🔥 급등 진행형" if r['등락률'] >= 5.0 
-        else ("🎯 S급 눌림목" if r['등락률'] < 0 and r['거래대금'] > 10000 
+        lambda r: "🔥 급등 돌파" if r['등락률'] >= 5.0 
+        else ("🎯 S급 눌림" if r['등락률'] < 0 and r['거래대금'] > 10000 
         else "🟡 지지선 근접"), axis=1
     )
     
@@ -134,17 +150,43 @@ if not df_universe.empty:
     top_10 = df_universe.sort_values(by='10분_상승예측(%)', ascending=False).head(10)
 
 # -----------------------------------------------------------------------------
-# 🎯 화면 상단 (타이틀 & 노란색 시계 캡슐)
+# 🎯 화면 상단 (타이틀 & 동적 시계 & 30초 진행 바)
 # -----------------------------------------------------------------------------
-st.markdown("<div class='main-title'>AI 단타 타점 TOP 10</div>", unsafe_allow_html=True)
+st.markdown("<div class='main-title'><span class='live-dot'>●</span> 실시간 AI 타점 스캐너</div>", unsafe_allow_html=True)
 
-current_time_str = datetime.now(KST).strftime('%Y년 %m월 %d일 %H:%M')
-
-st.markdown(f"""
+st.markdown("""
     <div class='time-container'>
-        <div class='time-pill' id="clockDisplay">⚡ {current_time_str} 기준</div>
+        <div id="clockDisplay">00:00:00</div>
     </div>
+    <div class="progress-container"><div id="scanProgressBar"></div></div>
 """, unsafe_allow_html=True)
+
+# 자바스크립트로 동적 시계 및 30초 타이머 바 작동
+components.html("""
+    <script>
+        var startTime = Date.now();
+        
+        function updateDynamicElements() {
+            // 1. 시계 업데이트
+            var now = new Date();
+            var hours = now.getHours().toString().padStart(2, '0');
+            var minutes = now.getMinutes().toString().padStart(2, '0');
+            var seconds = now.getSeconds().toString().padStart(2, '0');
+            var timeString = hours + ':' + minutes + ':' + seconds + ' 기준';
+            
+            var clocks = window.parent.document.querySelectorAll('#clockDisplay');
+            clocks.forEach(function(el) { el.innerText = timeString; });
+
+            // 2. 30초 프로그레스 바 업데이트
+            var elapsed = Date.now() - startTime;
+            var percent = (elapsed % 30000) / 30000 * 100;
+            
+            var bars = window.parent.document.querySelectorAll('#scanProgressBar');
+            bars.forEach(function(el) { el.style.width = percent + '%'; });
+        }
+        setInterval(updateDynamicElements, 100);
+    </script>
+""", height=0, width=0)
 
 # -----------------------------------------------------------------------------
 # 🃏 커스텀 HTML 카드 리스트 그리기
@@ -155,10 +197,9 @@ if not top_10.empty:
     for i, (_, row) in enumerate(top_10.iterrows(), start=1):
         curr_ret = row['등락률']
         curr_ret_str = f"{curr_ret:+.2f}%"
-        # 색상 세팅 (상승: 빨강, 하락: 파랑, 보합: 회색)
-        curr_ret_color = "#f87171" if curr_ret > 0 else "#38bdf8" if curr_ret < 0 else "#9ca3af"
+        # HTS 컬러 적용 (상승: 진한 빨강, 하락: 진한 파랑, 보합: 회색)
+        curr_ret_color = "#ef4444" if curr_ret > 0 else "#3b82f6" if curr_ret < 0 else "#9ca3af"
         
-        # ⚠️ HTML 구문 띄어쓰기 금지 구역 (코드 노출 방지)
         cards_html += f"""<div class="stock-card">
 <div class="rank-circle">{i}</div>
 <div class="name-col">
@@ -170,7 +211,7 @@ if not top_10.empty:
 <div class="center-return" style="color: {curr_ret_color};">{curr_ret_str}</div>
 </div>
 <div class="right-col">
-<div class="expected-label">기대수익</div>
+<div class="expected-label">AI 점수</div>
 <div class="expected-value">{row['기대수익_str']}</div>
 </div>
 </div>"""
@@ -178,3 +219,16 @@ if not top_10.empty:
     st.markdown(cards_html, unsafe_allow_html=True)
 else:
     st.error("데이터를 수집 중입니다. 장 시작 전이거나 네트워크 상태를 확인해주세요.")
+
+# -----------------------------------------------------------------------------
+# 🛡️ [필수] 유튜브 정책 방어용 흐르는 면책 조항
+# -----------------------------------------------------------------------------
+st.markdown("""
+    <div class="marquee-container">
+        <div class="marquee-content">
+            ⚠️ <b>[투자 유의사항]</b> 본 방송은 AI 알고리즘에 의한 단순 데이터 제공용이며 <b>투자를 권유하지 않습니다.</b> 모든 투자의 최종 책임은 <b>투자자 본인</b>에게 있습니다. &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;
+            ⚠️ 화면은 <b>30초 간격</b>으로 자동 갱신됩니다. &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;
+            ⚠️ 본 방송은 AI 알고리즘에 의한 단순 데이터 제공용이며 <b>투자를 권유하지 않습니다.</b> 모든 투자의 최종 책임은 <b>투자자 본인</b>에게 있습니다.
+        </div>
+    </div>
+""", unsafe_allow_html=True)
