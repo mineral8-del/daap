@@ -134,8 +134,17 @@ def is_market_open(date_kst):
 
 now_kst = datetime.now(KST)
 
-# 휴장일인 경우 렌더링 후 스크립트 완전 정지
-if not is_market_open(now_kst):
+# =============================================================================
+# 🛠️ [테스트 모드] 관리자 전용 사이드바 토글 (평소엔 숨겨져 있음)
+# =============================================================================
+with st.sidebar:
+    st.markdown("### 🛠️ 관리자 도구")
+    force_open = st.checkbox("🚀 강제 영업일 모드 켜기 (휴장일 무시)", value=False)
+    st.info("이 버튼을 켜면 휴장일 로직을 무시하고 정규장처럼 강제로 API를 호출합니다.")
+
+# 휴장일인 경우 렌더링 후 스크립트 완전 정지 
+# (💡 단, force_open 체크박스가 켜져 있다면 이 검사를 무시하고 통과합니다!)
+if not is_market_open(now_kst) and not force_open:
     st.markdown("""
         <div class="holiday-panel">
             <div style="font-size: 6rem; margin-bottom: 20px;">☕</div>
