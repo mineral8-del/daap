@@ -139,28 +139,38 @@ def get_kis_top_trading_value_stocks():
     return df.sort_values(by='거래대금', ascending=False).drop_duplicates(subset=['종목코드']).dropna()
 
 # -----------------------------------------------------------------------------
-# 💾 [핵심 추가] 데이터 로깅 함수 (CSV 자동 저장)
+# 💾 [핵심 추가] 데이터 로깅 함수 (D드라이브 자동 저장)
 # -----------------------------------------------------------------------------
 def save_log_to_csv(top_10_df):
-    """현재 화면에 뜬 10개 종목을 CSV 파일로 매일 누적 저장합니다."""
+    """현재 화면에 뜬 10개 종목을 D드라이브에 매일 누적 저장합니다."""
+    
+    # 1. 저장할 🚀폴더 경로 지정 (원하시는 폴더명으로 변경 가능)
+    folder_path = "D:/logs"
+    
+    # 2. 폴더가 없으면 파이썬이 알아서 자동으로 생성합니다!
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+        print(f"📁 D드라이브에 '{folder_path}' 폴더를 새로 만들었습니다.")
+
+    # 3. 파일 이름 및 시간 설정
     today_str = datetime.now(KST).strftime('%Y%m%d')
-    file_name = f"D:/logs/ai_stock_log_{today_str}.csv"
+    file_name = f"{folder_path}/ai_stock_log_{today_str}.csv"
     current_time_str = datetime.now(KST).strftime('%Y-%m-%d %H:%M:%S')
 
-    # 저장용 데이터프레임 가공
+    # 4. 저장용 데이터프레임 가공
     save_df = top_10_df.copy()
     save_df.insert(0, '포착시간', current_time_str)
     save_df.insert(1, '순위', range(1, len(save_df) + 1))
     
-    # 엑셀에서 보기 편하게 컬럼 순서 재배치
     cols = ['포착시간', '순위', '종목명', '종목코드', '현재가', '등락률', '거래대금', '10분_상승예측(%)', '매매상태']
     save_df = save_df[cols]
 
-    # 파일이 존재하지 않으면 헤더(컬럼명)를 포함하여 생성, 존재하면 아래에 데이터만 추가(append)
+    # 5. 엑셀 파일로 저장
     write_header = not os.path.exists(file_name)
-    
-    # utf-8-sig 인코딩을 사용해야 엑셀에서 한글이 깨지지 않습니다.
     save_df.to_csv(file_name, mode='a', index=False, encoding='utf-8-sig', header=write_header)
+    
+    # 6. 터미널(도스창)에 저장이 잘 되었다고 표시해 줍니다.
+    print(f"✅ [{current_time_str}] D드라이브에 데이터 저장 완료!")
 
 # -----------------------------------------------------------------------------
 # 🚀 자동 새로고침 타이머 (30초)
@@ -196,7 +206,7 @@ if not df_universe.empty:
     try:
         save_log_to_csv(top_10)
     except Exception as e:
-        pass # 파일 저장 실패 시 방송이 터지면 안 되므로 예외 처리
+        print(f"❌ 데이터 저장 중 에러 발생: {e}") # 에러가 나면 도스창에 빨간 글씨로 이유를 알려줌
 
     # 기대수익 및 현재가 포맷 (UI 표시용)
     top_10['기대수익_str'] = top_10['10분_상승예측(%)'].apply(lambda x: f"+{max(0.1, x):.1f}%")
