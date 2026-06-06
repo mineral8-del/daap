@@ -94,12 +94,65 @@ st.markdown("""
     }
     .marquee-content { display: inline-block; animation: scroll-left 18s linear infinite; font-size: 1.45rem; font-weight: 900; }
     @keyframes scroll-left { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
-
+    
+    /* ☕ 휴장일 전용 패널 */
+    .holiday-panel {
+        display: flex; flex-direction: column; align-items: center; justify-content: center; 
+        height: 80vh; background-color: #0b1120; text-align: center;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 KST = timezone(timedelta(hours=9))
 
+# -----------------------------------------------------------------------------
+# 🛑 [핵심 추가] 휴장일(주말 및 공휴일) 판별 로직
+# -----------------------------------------------------------------------------
+def is_market_open(date_kst):
+    # 1. 주말 확인 (월=0, 화=1, ..., 토=5, 일=6)
+    if date_kst.weekday() in [5, 6]:
+        return False
+    
+    # 2. 한국 주요 공휴일 및 연말 휴장일 (2024~2026년 기준)
+    holidays = {
+        # 2024년
+        "2024-01-01", "2024-02-09", "2024-02-12", "2024-03-01", "2024-04-10", "2024-05-01", "2024-05-06", "2024-05-15", 
+        "2024-06-06", "2024-08-15", "2024-09-16", "2024-09-17", "2024-09-18", "2024-10-03", "2024-10-09", "2024-12-25", "2024-12-31",
+        # 2025년
+        "2025-01-01", "2025-01-28", "2025-01-29", "2025-01-30", "2025-03-03", "2025-05-01", "2025-05-05", "2025-05-06", 
+        "2025-06-06", "2025-08-15", "2025-10-03", "2025-10-06", "2025-10-07", "2025-10-08", "2025-10-09", "2025-12-25", "2025-12-31",
+        # 2026년
+        "2026-01-01", "2026-02-16", "2026-02-17", "2026-02-18", "2026-03-02", "2026-05-01", "2026-05-05", "2026-05-25", 
+        "2026-06-06", "2026-08-14", "2026-09-24", "2026-09-25", "2026-09-28", "2026-10-05", "2026-10-09", "2026-12-25", "2026-12-31"
+    }
+    
+    current_date_str = date_kst.strftime('%Y-%m-%d')
+    if current_date_str in holidays:
+        return False
+        
+    return True
+
+now_kst = datetime.now(KST)
+
+# 휴장일인 경우 렌더링 후 스크립트 완전 정지
+if not is_market_open(now_kst):
+    st.markdown("""
+        <div class="holiday-panel">
+            <div style="font-size: 6rem; margin-bottom: 20px;">☕</div>
+            <div style="color: #facc15; font-size: 2.8rem; font-weight: 900; letter-spacing: -1px; margin-bottom: 15px;">증권시장 휴장 안내</div>
+            <div style="color: #94a3b8; font-size: 1.5rem; font-weight: 700; line-height: 1.6;">
+                오늘은 주말 또는 공휴일로 인해<br>
+                주식 시장이 열리지 않습니다.<br><br>
+                다음 거래일에 다시 뵙겠습니다.
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    st.stop()  # API 호출 및 자동 새로고침 중단
+
+
+# -----------------------------------------------------------------------------
+# 여기서부터는 영업일에만 실행됨 (자동 새로고침 및 API 호출)
+# -----------------------------------------------------------------------------
 @st.cache_resource(ttl=3600*20)
 def get_access_token():
     headers = {"content-type": "application/json"}
