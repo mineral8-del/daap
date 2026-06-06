@@ -26,147 +26,85 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 # 📱 [쇼츠용 세로 뷰] 레이아웃 설정
 st.set_page_config(layout="wide", page_title="🔴 하이모바일 쇼츠 LIVE", initial_sidebar_state="collapsed")
 
-# 🎨 0.5mm 다이어트: 꽉 차면서도 답답하지 않은 황금비율 CSS
+# 🎨 CSS 생략 (기존과 완벽히 동일)
 st.markdown("""
 <style>
-    /* 1. 스트림릿 기본 여백 제거 */
     html, body, [class*="css"] { margin: 0 !important; padding: 0 !important; }
     .stApp { background-color: #0b1120; }
     .block-container { 
         padding-top: 0rem !important; 
-        padding-bottom: 80px !important; /* 하단 여백 최적화 */
+        padding-bottom: 80px !important; 
         padding-left: 0.3rem !important; 
         padding-right: 0.3rem !important; 
         max-width: 100% !important; 
     }
     header[data-testid="stHeader"], #MainMenu, footer, div[data-testid="stToolbar"] { display: none !important; }
-    
-    /* 🔴 유튜브 방어용 라이브 깜빡임 애니메이션 */
     @keyframes blink { 0% { opacity: 1; text-shadow: 0 0 12px red; } 50% { opacity: 0.3; } 100% { opacity: 1; text-shadow: 0 0 12px red; } }
     .live-dot { color: #ef4444; animation: blink 1.5s infinite; font-size: 1.4rem; vertical-align: middle; }
-    
-    /* 🎯 메인 타이틀 (폰트: 2.8 -> 2.6 -> 2.7rem 조정) */
     .main-title { color: #facc15; font-size: 2.7rem; font-weight: 900; text-align: center; margin-top: 6px; margin-bottom: 5px; letter-spacing: -1.5px; text-shadow: 3px 3px 6px rgba(0,0,0,0.6); }
-    
-    /* 🕒 상단 디지털 시계 */
     .time-container { text-align: center; margin-bottom: 11px; }
     #clockDisplay { background-color: #1e293b; color: #ffffff; font-size: 1.75rem; font-weight: 900; padding: 7px 22px; border-radius: 12px; border: 2px solid #334155; display: inline-block; letter-spacing: 2px; box-shadow: inset 0 0 12px rgba(0,0,0,0.8); }
-    
-    /* ⏱️ 30초 갱신 게이지 바 */
     .progress-container { width: 100%; background-color: #1e293b; border-radius: 6px; height: 9px; margin-bottom: 11px; overflow: hidden; }
     #scanProgressBar { height: 100%; background: linear-gradient(90deg, #3b82f6, #facc15, #ef4444); width: 0%; transition: width 0.1s linear; }
-    
-    /* 🃏 카드 전체 레이아웃 (🔥 패딩: 22px -> 18px -> 20px 조정) */
     .stock-card { background-color: #151e2d; border-radius: 12px; padding: 20px 10px; margin-bottom: 11px; display: flex; align-items: center; border: 1px solid #334155; box-shadow: 0 4px 6px rgba(0,0,0,0.5); }
-    
-    /* 🔴 랭킹 동그라미 뱃지 (크기: 55px -> 50px -> 52px 조정) */
     .rank-circle { background: linear-gradient(135deg, #ef4444, #991b1b); color: white; width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.9rem; font-weight: 900; margin-right: 12px; flex-shrink: 0; border: 2px solid #fca5a5; }
-    
-    /* 📝 왼쪽: 종목명 & 상태 영역 */
     .name-col { width: 44%; display: flex; flex-direction: column; justify-content: center; text-align: left; }
     .stock-name { color: #ffffff; font-size: 2.1rem; font-weight: 900; letter-spacing: -1.5px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .status-text { font-size: 1.25rem; font-weight: 800; color: #fbbf24; margin: 0; }
-    
-    /* 🚀 중앙: 현재가 & 상승률 영역 */
     .center-col { width: 34%; display: flex; flex-direction: column; justify-content: center; text-align: right; padding-right: 10px; }
     .current-price { font-size: 1.7rem; font-weight: 900; color: #e2e8f0; letter-spacing: -0.5px; }
     .center-return { font-size: 2.0rem; font-weight: 900; letter-spacing: -1px; margin-top: 2px; }
-    
-    /* 💰 오른쪽: 기대수익률 영역 */
     .right-col { width: 22%; text-align: center; background-color: #0f172a; border-radius: 8px; padding: 11px 0; border: 1px solid #334155; }
     .expected-label { color: #94a3b8; font-size: 1.05rem; font-weight: 800; margin-bottom: 3px; }
     .expected-value { color: #22c55e; font-size: 2.0rem; font-weight: 900; letter-spacing: -1px; }
-
-    /* 🔥 유튜브 면책 조항 화면 맨 하단에 '고정' */
-    .marquee-container { 
-        position: fixed; 
-        bottom: 0; 
-        left: 0; 
-        width: 100%; 
-        overflow: hidden; 
-        background-color: #7f1d1d; 
-        color: white; 
-        padding: 13px 0; 
-        border-top: 3px solid #dc2626; 
-        white-space: nowrap; 
-        box-shadow: 0 -4px 8px rgba(0,0,0,0.6); 
-        z-index: 9999; 
-    }
+    .marquee-container { position: fixed; bottom: 0; left: 0; width: 100%; overflow: hidden; background-color: #7f1d1d; color: white; padding: 13px 0; border-top: 3px solid #dc2626; white-space: nowrap; box-shadow: 0 -4px 8px rgba(0,0,0,0.6); z-index: 9999; }
     .marquee-content { display: inline-block; animation: scroll-left 18s linear infinite; font-size: 1.45rem; font-weight: 900; }
     @keyframes scroll-left { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
-    
-    /* ☕ 휴장일 전용 패널 */
-    .holiday-panel {
-        display: flex; flex-direction: column; align-items: center; justify-content: center; 
-        height: 80vh; background-color: #0b1120; text-align: center;
-    }
+    .holiday-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; background-color: #0b1120; text-align: center; }
 </style>
 """, unsafe_allow_html=True)
 
 KST = timezone(timedelta(hours=9))
 
 # -----------------------------------------------------------------------------
-# 🛑 [핵심 추가] 휴장일(주말 및 공휴일) 판별 로직
+# 🛑 휴장일(주말 및 공휴일) 판별 로직
 # -----------------------------------------------------------------------------
 def is_market_open(date_kst):
-    # 1. 주말 확인 (월=0, 화=1, ..., 토=5, 일=6)
-    if date_kst.weekday() in [5, 6]:
-        return False
-    
-    # 2. 한국 주요 공휴일 및 연말 휴장일 (2024~2026년 기준)
+    if date_kst.weekday() in [5, 6]: return False
     holidays = {
-        # 2024년
         "2024-01-01", "2024-02-09", "2024-02-12", "2024-03-01", "2024-04-10", "2024-05-01", "2024-05-06", "2024-05-15", 
         "2024-06-06", "2024-08-15", "2024-09-16", "2024-09-17", "2024-09-18", "2024-10-03", "2024-10-09", "2024-12-25", "2024-12-31",
-        # 2025년
         "2025-01-01", "2025-01-28", "2025-01-29", "2025-01-30", "2025-03-03", "2025-05-01", "2025-05-05", "2025-05-06", 
         "2025-06-06", "2025-08-15", "2025-10-03", "2025-10-06", "2025-10-07", "2025-10-08", "2025-10-09", "2025-12-25", "2025-12-31",
-        # 2026년
         "2026-01-01", "2026-02-16", "2026-02-17", "2026-02-18", "2026-03-02", "2026-05-01", "2026-05-05", "2026-05-25", 
         "2026-06-06", "2026-08-14", "2026-09-24", "2026-09-25", "2026-09-28", "2026-10-05", "2026-10-09", "2026-12-25", "2026-12-31"
     }
-    
-    current_date_str = date_kst.strftime('%Y-%m-%d')
-    if current_date_str in holidays:
-        return False
-        
+    if date_kst.strftime('%Y-%m-%d') in holidays: return False
     return True
-
-# ... (위쪽 기존 코드 동일) ...
 
 now_kst = datetime.now(KST)
 
-# =============================================================================
+# -----------------------------------------------------------------------------
 # 🛠️ [테스트 모드] 메인 화면에 숨겨진 관리자 도구 배치
-# =============================================================================
+# -----------------------------------------------------------------------------
 with st.expander("🛠️ 시스템 테스트 도구 (클릭하여 열기)"):
     force_open = st.checkbox("🚀 강제 영업일 모드 켜기 (휴장일 무시)", value=False)
     st.info("이 버튼을 켜면 휴장일 로직을 무시하고 정규장처럼 강제로 데이터를 수집합니다.")
 
-# 휴장일인 경우 렌더링 후 스크립트 완전 정지 
-# (💡 단, force_open 체크박스가 켜져 있다면 이 검사를 무시하고 통과합니다!)
 if not is_market_open(now_kst) and not force_open:
     st.markdown("""
         <div class="holiday-panel">
             <div style="font-size: 6rem; margin-bottom: 20px;">☕</div>
             <div style="color: #facc15; font-size: 2.8rem; font-weight: 900; letter-spacing: -1px; margin-bottom: 15px;">증권시장 휴장 안내</div>
             <div style="color: #94a3b8; font-size: 1.5rem; font-weight: 700; line-height: 1.6;">
-                오늘은 주말 또는 공휴일로 인해<br>
-                주식 시장이 열리지 않습니다.<br><br>
-                다음 거래일에 다시 뵙겠습니다.
+                오늘은 주말 또는 공휴일로 인해<br>주식 시장이 열리지 않습니다.<br><br>다음 거래일에 다시 뵙겠습니다.
             </div>
         </div>
     """, unsafe_allow_html=True)
-    st.stop()  # API 호출 및 자동 새로고침 중단
-
-# =============================================================================
-# 여기서부터는 영업일에만(또는 강제 영업일 모드를 켰을 때만) 실행됨
-# =============================================================================
-
-# ... (아래쪽 기존 코드 동일) ...
+    st.stop()
 
 # -----------------------------------------------------------------------------
-# 여기서부터는 영업일에만 실행됨 (자동 새로고침 및 API 호출)
+# 영업일 API 통신
 # -----------------------------------------------------------------------------
 @st.cache_resource(ttl=3600*20)
 def get_access_token():
@@ -201,6 +139,30 @@ def get_kis_top_trading_value_stocks():
     return df.sort_values(by='거래대금', ascending=False).drop_duplicates(subset=['종목코드']).dropna()
 
 # -----------------------------------------------------------------------------
+# 💾 [핵심 추가] 데이터 로깅 함수 (CSV 자동 저장)
+# -----------------------------------------------------------------------------
+def save_log_to_csv(top_10_df):
+    """현재 화면에 뜬 10개 종목을 CSV 파일로 매일 누적 저장합니다."""
+    today_str = datetime.now(KST).strftime('%Y%m%d')
+    file_name = f"ai_stock_log_{today_str}.csv"
+    current_time_str = datetime.now(KST).strftime('%Y-%m-%d %H:%M:%S')
+
+    # 저장용 데이터프레임 가공
+    save_df = top_10_df.copy()
+    save_df.insert(0, '포착시간', current_time_str)
+    save_df.insert(1, '순위', range(1, len(save_df) + 1))
+    
+    # 엑셀에서 보기 편하게 컬럼 순서 재배치
+    cols = ['포착시간', '순위', '종목명', '종목코드', '현재가', '등락률', '거래대금', '10분_상승예측(%)', '매매상태']
+    save_df = save_df[cols]
+
+    # 파일이 존재하지 않으면 헤더(컬럼명)를 포함하여 생성, 존재하면 아래에 데이터만 추가(append)
+    write_header = not os.path.exists(file_name)
+    
+    # utf-8-sig 인코딩을 사용해야 엑셀에서 한글이 깨지지 않습니다.
+    save_df.to_csv(file_name, mode='a', index=False, encoding='utf-8-sig', header=write_header)
+
+# -----------------------------------------------------------------------------
 # 🚀 자동 새로고침 타이머 (30초)
 # -----------------------------------------------------------------------------
 try:
@@ -227,12 +189,18 @@ if not df_universe.empty:
         else "🟡 지지선 근접"), axis=1
     )
     
-    # 기대수익 및 현재가 포맷
-    df_universe['기대수익_str'] = df_universe['10분_상승예측(%)'].apply(lambda x: f"+{max(0.1, x):.1f}%")
-    df_universe['현재가_str'] = df_universe['현재가'].apply(lambda x: f"{int(x):,}원") 
-    
     # 점수 높은 순으로 10개 추출
     top_10 = df_universe.sort_values(by='10분_상승예측(%)', ascending=False).head(10)
+
+    # 💾 화면에 그리기 직전, 추출된 Top 10 데이터를 엑셀(CSV)로 은밀하게 저장합니다.
+    try:
+        save_log_to_csv(top_10)
+    except Exception as e:
+        pass # 파일 저장 실패 시 방송이 터지면 안 되므로 예외 처리
+
+    # 기대수익 및 현재가 포맷 (UI 표시용)
+    top_10['기대수익_str'] = top_10['10분_상승예측(%)'].apply(lambda x: f"+{max(0.1, x):.1f}%")
+    top_10['현재가_str'] = top_10['현재가'].apply(lambda x: f"{int(x):,}원") 
 
 # -----------------------------------------------------------------------------
 # 🎯 화면 상단 (타이틀 & 동적 시계 & 30초 진행 바)
@@ -297,7 +265,6 @@ if not top_10.empty:
 </div>
 </div>"""
     
-    # 🔥 투명 방석 세밀 조정 (80px -> 60px -> 70px)
     cards_html += "<div style='height: 70px; width: 100%; opacity: 0;'></div>"
         
     st.markdown(cards_html, unsafe_allow_html=True)
