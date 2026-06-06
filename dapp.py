@@ -144,7 +144,7 @@ def get_kis_top_trading_value_stocks():
 def save_log_to_csv(top_10_df):
     """현재 화면에 뜬 10개 종목을 CSV 파일로 매일 누적 저장합니다."""
     today_str = datetime.now(KST).strftime('%Y%m%d')
-    file_name = f"ai_stock_log_{today_str}.csv"
+    file_name = f"D:/logs/ai_stock_log_{today_str}.csv"
     current_time_str = datetime.now(KST).strftime('%Y-%m-%d %H:%M:%S')
 
     # 저장용 데이터프레임 가공
