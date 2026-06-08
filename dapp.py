@@ -9,6 +9,20 @@ import os
 import gc  # 메모리 누수 방지용
 from dotenv import load_dotenv
 import streamlit.components.v1 as components
+import exchange_calendars as xcals
+from datetime import datetime, timezone, timedelta
+
+def is_market_open(date_kst):
+    # 한국거래소(XKRX) 캘린더 객체 불러오기
+    krx_calendar = xcals.get_calendar("XKRX")
+    
+    # yyyy-mm-dd 형식으로 전달하면 개장일인지 True/False로 반환 (주말, 공휴일, 근로자의 날, 연말 휴장 모두 포함)
+    return krx_calendar.is_session(date_kst.strftime("%Y-%m-%d"))
+
+# (테스트용)
+# KST = timezone(timedelta(hours=9))
+# now_kst = datetime.now(KST)
+# print("오늘 장 열리나요?:", is_market_open(now_kst))
 
 # 📱 1. [가장 중요] 레이아웃 설정은 무조건 최상단(다른 st 명령어보다 먼저)에 있어야 합니다!
 st.set_page_config(layout="wide", page_title="🔴 하이모바일 쇼츠 LIVE", initial_sidebar_state="collapsed")
